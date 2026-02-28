@@ -1,0 +1,2932 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ghost Writer</title>
+<link rel="icon" type="image/png" href="/static/ghost-icon.png">
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f7f9f9;
+    --surface-hover: #eff3f4;
+    --surface-active: #e7ebec;
+    --border: #eff3f4;
+    --border-focus: #cfd9de;
+    --text: #0f1419;
+    --text-muted: #536471;
+    --text-dim: #8b98a5;
+    --accent: #0f1419;
+    --accent-subtle: #536471;
+    --x-blue: #1d9bf0;
+    --x-blue-hover: #1a8cd8;
+    --x-blue-dim: rgba(29, 155, 240, 0.1);
+    --green: #00ba7c;
+    --green-dim: rgba(0, 186, 124, 0.1);
+    --red: #f4212e;
+    --red-dim: rgba(244, 33, 46, 0.1);
+    --amber: #e67700;
+    --radius: 16px;
+    --radius-sm: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .app {
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 32px 40px 80px;
+  }
+
+  .app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .app-logo {
+    width: 36px;
+    height: 36px;
+    background: var(--text);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--bg);
+  }
+
+  .app-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  .app-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  /* Steps - X tab bar style */
+  .steps {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+
+  .step-indicator {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    border: none;
+    background: none;
+  }
+
+  .step-indicator:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .step-indicator.active {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .step-indicator.active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 4px;
+    background: var(--x-blue);
+    border-radius: 4px;
+  }
+
+  .step-indicator.done {
+    color: var(--green);
+  }
+
+  .step-indicator.done::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 4px;
+    background: var(--green);
+    border-radius: 4px;
+  }
+
+  .step-number {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--border);
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  .step-indicator.active .step-number {
+    background: var(--x-blue);
+    color: #fff;
+  }
+
+  .step-indicator.done .step-number {
+    background: var(--green);
+    color: #fff;
+  }
+
+  /* Sections */
+  .section {
+    display: none;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .section.visible { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .section-desc {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+  }
+
+  /* Step 1: two-column layout - wider library */
+  .step1-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .step1-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Library panel */
+  .library-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: sticky;
+    top: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .library-section {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .library-section:last-child {
+    border-bottom: none;
+  }
+
+  .library-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .library-header:hover {
+    background: var(--surface-hover);
+  }
+
+  .library-header-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .library-header-count {
+    font-size: 13px;
+    color: var(--text-dim);
+    background: var(--bg);
+    padding: 2px 10px;
+    border-radius: 999px;
+  }
+
+  .library-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 8px 12px;
+  }
+
+  .library-empty {
+    text-align: center;
+    padding: 20px 12px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  /* Library items */
+  .lib-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+    min-height: 48px;
+  }
+
+  .lib-item:hover {
+    background: var(--surface-hover);
+  }
+
+  .lib-item.active {
+    background: var(--x-blue-dim);
+  }
+
+  .lib-item.draggable {
+    cursor: grab;
+  }
+
+  .lib-item.draggable:active {
+    cursor: grabbing;
+  }
+
+  .lib-item.dragging {
+    opacity: 0.4;
+  }
+
+  .lib-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    font-weight: 800;
+  }
+
+  .lib-item-icon.style-icon {
+    background: rgba(120, 86, 255, 0.15);
+    color: #a78bfa;
+  }
+
+  .lib-item-icon.article-icon {
+    background: var(--x-blue-dim);
+    color: var(--x-blue);
+  }
+
+  .lib-item-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .lib-item-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+
+  .lib-item-meta {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+
+  .lib-item-badge {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    flex-shrink: 0;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .lib-item:hover .lib-item-badge {
+    opacity: 1;
+  }
+
+  .lib-item-badge.drag {
+    background: var(--x-blue-dim);
+    color: var(--x-blue);
+  }
+
+  .lib-item-badge.click {
+    background: rgba(120, 86, 255, 0.12);
+    color: #a78bfa;
+  }
+
+  .lib-item-regen {
+    background: var(--x-blue-dim);
+    border: 1px solid rgba(29, 155, 240, 0.25);
+    color: var(--x-blue);
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    opacity: 0;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .lib-item:hover .lib-item-regen {
+    opacity: 1;
+  }
+
+  .lib-item-regen:hover {
+    background: rgba(29, 155, 240, 0.2);
+    border-color: var(--x-blue);
+  }
+
+  .lib-item-delete {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 999px;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .lib-item:hover .lib-item-delete {
+    opacity: 1;
+  }
+
+  .lib-item-delete:hover {
+    color: var(--red);
+    background: var(--red-dim);
+  }
+
+  /* Right panel: ref cards */
+  .ref-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ref-panel-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+
+  .ref-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .ref-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    transition: border-color 0.2s;
+    position: relative;
+  }
+
+  .ref-card:focus-within {
+    border-color: var(--x-blue);
+  }
+
+  .ref-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .ref-card-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .ref-card-count {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .ref-card textarea {
+    width: 100%;
+    min-height: 160px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.8;
+    resize: vertical;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .ref-card textarea::placeholder {
+    color: var(--text-dim);
+  }
+
+  .ref-card.drop-target {
+    border-color: var(--x-blue);
+    background: var(--x-blue-dim);
+  }
+
+  .ref-card.drop-target::after {
+    content: "ドロップして記事をセット";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    inset: 0;
+    background: rgba(29, 155, 240, 0.08);
+    border-radius: calc(var(--radius) - 1px);
+    color: var(--x-blue);
+    font-size: 15px;
+    font-weight: 700;
+    pointer-events: none;
+  }
+
+  /* URL row */
+  .ref-url-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .ref-url-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 10px 16px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+
+  .ref-url-row input:focus {
+    border-color: var(--x-blue);
+  }
+
+  .ref-url-row input::placeholder {
+    color: var(--text-dim);
+  }
+
+  .ref-url-row .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    white-space: nowrap;
+    border-radius: 999px;
+  }
+
+  .ref-url-message {
+    font-size: 13px;
+    color: var(--amber);
+    margin-bottom: 8px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    padding: 0 4px;
+  }
+
+  .ref-url-message.success {
+    color: var(--green);
+  }
+
+  .ref-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--x-blue-dim);
+    border: 1px solid rgba(29, 155, 240, 0.2);
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .ref-meta-title {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 14px;
+  }
+
+  .ref-meta-author {
+    color: var(--x-blue);
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  /* Save row */
+  .save-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 8px;
+  }
+
+  .save-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 15px;
+    padding: 12px 20px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+
+  .save-row input:focus {
+    border-color: var(--x-blue);
+  }
+
+  .save-row input::placeholder {
+    color: var(--text-dim);
+  }
+
+  /* Form fields */
+  .field {
+    margin-bottom: 24px;
+  }
+
+  .field-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .field input,
+  .field textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 15px;
+    padding: 16px 20px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus,
+  .field textarea:focus {
+    border-color: var(--x-blue);
+  }
+
+  .field textarea {
+    min-height: 160px;
+    line-height: 1.8;
+    resize: vertical;
+  }
+
+  .field input::placeholder,
+  .field textarea::placeholder {
+    color: var(--text-dim);
+  }
+
+  /* Buttons - X style */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .btn-primary {
+    background: var(--x-blue);
+    color: #fff;
+  }
+
+  .btn-primary:hover { background: var(--x-blue-hover); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover { border-color: var(--text-dim); background: var(--surface-hover); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    padding: 12px 16px;
+  }
+
+  .btn-ghost:hover { color: var(--text); background: var(--surface-hover); border-radius: 999px; }
+
+  .btn-sm {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+
+  /* Chat - X DM style */
+  .chat-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+    max-width: 800px;
+  }
+
+  .chat-bubble {
+    max-width: 85%;
+    padding: 16px 20px;
+    border-radius: 24px;
+    font-size: 15px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+
+  .chat-bubble.ai {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    color: var(--text);
+  }
+
+  .chat-bubble.user {
+    background: var(--x-blue);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    color: #fff;
+    border: none;
+  }
+
+  .chat-input-area {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    max-width: 800px;
+  }
+
+  .chat-input-area textarea {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    color: var(--text);
+    font-size: 15px;
+    padding: 14px 20px;
+    outline: none;
+    font-family: inherit;
+    line-height: 1.6;
+    resize: none;
+    min-height: 52px;
+    max-height: 200px;
+    transition: border-color 0.2s;
+  }
+
+  .chat-input-area textarea:focus {
+    border-color: var(--x-blue);
+  }
+
+  /* Article output - X article style */
+  .article-output {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 48px 40px;
+    line-height: 2;
+    font-size: 16px;
+    margin-bottom: 24px;
+    max-width: 700px;
+  }
+
+  .article-output h1 {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 24px;
+    color: var(--accent);
+    line-height: 1.3;
+  }
+
+  .article-output h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 36px;
+    margin-bottom: 12px;
+    color: var(--accent);
+  }
+
+  .article-output hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 32px 0;
+  }
+
+  .article-output p {
+    margin: 8px 0;
+    color: var(--text);
+  }
+
+  .article-output b {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* Style preview */
+  .style-preview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 28px;
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .style-preview summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+
+  .style-preview-item { margin-bottom: 16px; }
+  .style-preview-label { font-weight: 700; color: var(--x-blue); margin-bottom: 4px; font-size: 13px; }
+
+  /* Loading */
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    color: var(--text-muted);
+    font-size: 15px;
+  }
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--x-blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast - X notification style */
+  .toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--x-blue);
+    color: #fff;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 100;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Step 2-4 content wrapper for better readability */
+  .content-narrow {
+    max-width: 680px;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .app { padding: 16px 16px 60px; }
+    .article-output { padding: 24px 20px; }
+    .step1-layout { gap: 20px; }
+  }
+
+  @media (min-width: 1600px) {
+    .app { max-width: 1600px; }
+    .step1-layout { grid-template-columns: 360px 1fr; }
+  }
+
+  /* Model selector */
+  .model-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .model-selector-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .model-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 16px;
+    padding-right: 36px;
+    outline: none;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2371767b' d='M3 4.5L6 8l3-3.5H3z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+
+  .model-select:hover {
+    border-color: var(--text-dim);
+  }
+
+  .model-select:focus {
+    border-color: var(--x-blue);
+  }
+
+  /* Scrollbar styling for X feel */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* Saved contexts list (legacy, keeping for compat) */
+  .saved-contexts { margin-bottom: 32px; }
+  .ctx-list { display: flex; flex-direction: column; gap: 8px; }
+  .ctx-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-dim);
+    font-size: 14px;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 28px 0;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .divider::before,
+  .divider::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: fadeIn 0.15s ease;
+  }
+
+  .modal-overlay.show {
+    display: flex;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 720px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideIn 0.2s ease;
+  }
+
+  @keyframes modalSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 16px;
+  }
+
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 999px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .modal-close:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+  }
+
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    line-height: 1.8;
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  .modal-body-article {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .modal-body-article h1 {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: var(--accent);
+    line-height: 1.3;
+  }
+
+  .modal-body-article h2 {
+    font-size: 17px;
+    font-weight: 700;
+    margin-top: 28px;
+    margin-bottom: 10px;
+    color: var(--accent);
+  }
+
+  .modal-body-article hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  .modal-body-article p {
+    margin: 6px 0;
+    white-space: pre-wrap;
+  }
+
+  .modal-body-article b {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .modal-style-item {
+    margin-bottom: 20px;
+  }
+
+  .modal-style-label {
+    font-weight: 700;
+    color: var(--x-blue);
+    font-size: 13px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .modal-style-value {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* Sources panel (Step 2) */
+  .sources-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+  }
+
+  .sources-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .sources-header:hover {
+    background: var(--surface-hover);
+  }
+
+  .sources-header-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sources-header-count {
+    font-size: 13px;
+    color: var(--text-dim);
+    background: var(--bg);
+    padding: 2px 10px;
+    border-radius: 999px;
+  }
+
+  .sources-body {
+    padding: 0 20px 16px;
+  }
+
+  .sources-add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .sources-add-row input[type="text"] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 10px 16px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+
+  .sources-add-row input[type="text"]:focus {
+    border-color: var(--x-blue);
+  }
+
+  .sources-add-row input[type="text"]::placeholder {
+    color: var(--text-dim);
+  }
+
+  .sources-add-row label.btn {
+    cursor: pointer;
+  }
+
+  .sources-add-row input[type="file"] {
+    display: none;
+  }
+
+  .source-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    transition: border-color 0.15s;
+  }
+
+  .source-item:hover {
+    border-color: var(--border-focus);
+  }
+
+  .source-item-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .source-item-icon.url-icon {
+    background: var(--green-dim);
+    color: var(--green);
+  }
+
+  .source-item-icon.pdf-icon {
+    background: var(--red-dim);
+    color: var(--red);
+  }
+
+  .source-item-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .source-item-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .source-item-meta {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .source-item-delete {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 999px;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .source-item:hover .source-item-delete {
+    opacity: 1;
+  }
+
+  .source-item-delete:hover {
+    color: var(--red);
+    background: var(--red-dim);
+  }
+
+  .sources-empty {
+    text-align: center;
+    padding: 16px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  /* Mode switcher */
+  .mode-switcher {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px;
+    margin-bottom: 24px;
+    max-width: 320px;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    font-family: inherit;
+    text-align: center;
+  }
+
+  .mode-btn:hover {
+    color: var(--text);
+  }
+
+  .mode-btn.active {
+    background: var(--x-blue);
+    color: #fff;
+  }
+
+  /* Ghost writing animation */
+  .ghost-writing-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    gap: 24px;
+  }
+
+  .ghost-writing-img {
+    width: 120px;
+    height: auto;
+    animation: ghostBob 1.8s ease-in-out infinite;
+    filter: drop-shadow(0 8px 24px rgba(29, 155, 240, 0.15));
+  }
+
+  @keyframes ghostBob {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-6px) rotate(-2deg); }
+    50% { transform: translateY(0) rotate(0deg); }
+    75% { transform: translateY(-4px) rotate(2deg); }
+  }
+
+  .ghost-pen-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 200px;
+  }
+
+  .ghost-pen-line {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    animation: penDraw 2s ease-in-out infinite;
+    transform-origin: left;
+  }
+
+  .ghost-pen-line:nth-child(1) { animation-delay: 0s; width: 100%; }
+  .ghost-pen-line:nth-child(2) { animation-delay: 0.3s; width: 85%; }
+  .ghost-pen-line:nth-child(3) { animation-delay: 0.6s; width: 70%; }
+  .ghost-pen-line:nth-child(4) { animation-delay: 0.9s; width: 90%; }
+
+  @keyframes penDraw {
+    0% { transform: scaleX(0); opacity: 0.3; }
+    40% { transform: scaleX(1); opacity: 1; }
+    80% { transform: scaleX(1); opacity: 0.6; }
+    100% { transform: scaleX(0.2); opacity: 0.2; }
+  }
+
+  .ghost-writing-text {
+    font-size: 15px;
+    color: var(--text-muted);
+    font-weight: 500;
+    animation: ghostTextPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes ghostTextPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="app-header">
+    <div class="app-header-left">
+      <img src="/static/ghost-icon.png" alt="Ghost Writer" style="width:48px;height:48px;">
+      <div>
+        <h1 class="app-title">Ghost Writer</h1>
+        <p class="app-subtitle">リファレンス記事のスタイルを再現して、記事を生成する</p>
+      </div>
+    </div>
+    <div class="model-selector">
+      <span class="model-selector-label">Model</span>
+      <select class="model-select" id="model-select"></select>
+    </div>
+  </header>
+
+  <div class="mode-switcher">
+    <button class="mode-btn active" id="mode-create" onclick="switchMode('create')">新規作成</button>
+    <button class="mode-btn" id="mode-rewrite" onclick="switchMode('rewrite')">リライト</button>
+  </div>
+
+  <div id="create-flow">
+  <div class="steps">
+    <div class="step-indicator active" id="step1-ind">
+      <span class="step-number">1</span><span>コンテキスト</span>
+    </div>
+    <div class="step-indicator" id="step2-ind">
+      <span class="step-number">2</span><span>執筆指示</span>
+    </div>
+    <div class="step-indicator" id="step3-ind">
+      <span class="step-number">3</span><span>インタビュー</span>
+    </div>
+    <div class="step-indicator" id="step4-ind">
+      <span class="step-number">4</span><span>記事生成</span>
+    </div>
+  </div>
+
+  <!-- Step 1: Context -->
+  <div class="section visible" id="step1">
+    <h2 class="section-title">コンテキスト</h2>
+    <p class="section-desc">左のライブラリから記事をドラッグ&ドロップするか、保存済みスタイルをクリックして開始できます。</p>
+
+    <div class="step1-layout">
+
+      <!-- Left: Library -->
+      <div class="library-panel">
+
+        <div class="library-section">
+          <div class="library-header" onclick="toggleLibSection('styles')">
+            <span class="library-header-title">スタイル</span>
+            <span class="library-header-count" id="style-count">0</span>
+          </div>
+          <div class="library-list" id="lib-styles">
+            <div class="library-empty">まだありません</div>
+          </div>
+        </div>
+
+        <div class="library-section">
+          <div class="library-header" onclick="toggleLibSection('articles')">
+            <span class="library-header-title">記事</span>
+            <span class="library-header-count" id="article-count">0</span>
+          </div>
+          <div class="library-list" id="lib-articles">
+            <div class="library-empty">まだありません</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: Ref cards -->
+      <div class="ref-panel">
+        <div class="ref-panel-title">リファレンス記事（左からドラッグ、またはテキストを貼り付け）</div>
+
+        <div class="ref-cards">
+          <div class="ref-card">
+            <div class="ref-card-header">
+              <span class="ref-card-label">記事 1</span>
+              <span class="ref-card-count" id="ref1-count">0文字</span>
+            </div>
+            <div class="ref-url-row">
+              <input type="text" id="ref1-url" placeholder="URLを貼り付け（X記事、ブログ等）" onkeydown="if(event.key==='Enter')fetchUrl(1)">
+              <button class="btn btn-secondary btn-sm" onclick="fetchUrl(1)">取得</button>
+            </div>
+            <div class="ref-url-message" id="ref1-msg" style="display:none;"></div>
+            <div class="ref-meta" id="ref1-meta" style="display:none;"><span class="ref-meta-title" id="ref1-meta-title"></span><span class="ref-meta-author" id="ref1-meta-author"></span></div>
+            <textarea id="ref1" placeholder="リファレンス記事をここに貼り付け、またはURLから取得、またはライブラリからドラッグ..." oninput="updateCount(1)"></textarea>
+          </div>
+          <div class="ref-card">
+            <div class="ref-card-header">
+              <span class="ref-card-label">記事 2（任意）</span>
+              <span class="ref-card-count" id="ref2-count">0文字</span>
+            </div>
+            <div class="ref-url-row">
+              <input type="text" id="ref2-url" placeholder="URLを貼り付け（X記事、ブログ等）" onkeydown="if(event.key==='Enter')fetchUrl(2)">
+              <button class="btn btn-secondary btn-sm" onclick="fetchUrl(2)">取得</button>
+            </div>
+            <div class="ref-url-message" id="ref2-msg" style="display:none;"></div>
+            <div class="ref-meta" id="ref2-meta" style="display:none;"><span class="ref-meta-title" id="ref2-meta-title"></span><span class="ref-meta-author" id="ref2-meta-author"></span></div>
+            <textarea id="ref2" placeholder="2つ目のリファレンス記事（任意）" oninput="updateCount(2)"></textarea>
+          </div>
+          <div class="ref-card">
+            <div class="ref-card-header">
+              <span class="ref-card-label">記事 3（任意）</span>
+              <span class="ref-card-count" id="ref3-count">0文字</span>
+            </div>
+            <div class="ref-url-row">
+              <input type="text" id="ref3-url" placeholder="URLを貼り付け（X記事、ブログ等）" onkeydown="if(event.key==='Enter')fetchUrl(3)">
+              <button class="btn btn-secondary btn-sm" onclick="fetchUrl(3)">取得</button>
+            </div>
+            <div class="ref-url-message" id="ref3-msg" style="display:none;"></div>
+            <div class="ref-meta" id="ref3-meta" style="display:none;"><span class="ref-meta-title" id="ref3-meta-title"></span><span class="ref-meta-author" id="ref3-meta-author"></span></div>
+            <textarea id="ref3" placeholder="3つ目のリファレンス記事（任意）" oninput="updateCount(3)"></textarea>
+          </div>
+        </div>
+
+        <div class="save-row">
+          <input type="text" id="ctx-name" placeholder="スタイル名（例：経営エッセイ風）">
+          <button class="btn btn-secondary btn-sm" onclick="saveAndAnalyze()">保存して分析</button>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="analyzeOnly()" id="btn-analyze">保存せず分析のみ</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Step 2: Article brief -->
+  <div class="section" id="step2">
+    <div class="content-narrow">
+      <h2 class="section-title">執筆指示</h2>
+      <p class="section-desc">記事のタイトルと、盛り込みたい内容を簡単に書いてください。</p>
+
+      <div class="style-preview" id="style-preview">
+        <summary>分析されたスタイルガイド</summary>
+        <div id="style-preview-content"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">タイトル</label>
+        <input type="text" id="article-title" placeholder="例：愚痴はクソだ">
+      </div>
+
+      <div class="field">
+        <label class="field-label">内容メモ</label>
+        <textarea id="article-memo" placeholder="記事に入れたい内容を箇条書きで...&#10;&#10;例：&#10;- 愚痴は下の立場の人に言った時点でアウト&#10;- 自分もかつては愚痴ばかり言っていた&#10;- 社内サーベイで不満を吸い上げる仕組みを作った"></textarea>
+      </div>
+
+      <div class="sources-panel">
+        <div class="sources-header" onclick="toggleSources()">
+          <span class="sources-header-title">参考資料<span class="sources-header-count" id="sources-count">0</span></span>
+        </div>
+        <div class="sources-body" id="sources-body">
+          <div class="sources-add-row">
+            <input type="text" id="source-url-input" placeholder="URLを貼り付け（記事、ブログ等）" onkeydown="if(event.key==='Enter')addSourceUrl()">
+            <button class="btn btn-secondary btn-sm" onclick="addSourceUrl()">URL追加</button>
+            <label class="btn btn-secondary btn-sm" for="source-file-input">PDF追加</label>
+            <input type="file" id="source-file-input" accept=".pdf" onchange="addSourcePdf(event)">
+          </div>
+          <div id="sources-list"></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goToStep(1)">戻る</button>
+        <button class="btn btn-primary" onclick="startInterview()">インタビューを開始</button>
+        <button class="btn btn-secondary" id="btn-regen-direct" style="display:none;" onclick="regenDirect()">素材を使って再生成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Interview -->
+  <div class="section" id="step3">
+    <h2 class="section-title">インタビュー</h2>
+    <p class="section-desc">AIが記事に必要な素材を引き出すための質問をします。回答してください。</p>
+
+    <div class="chat-area" id="chat-area"></div>
+
+    <div class="chat-input-area">
+      <textarea id="chat-input" placeholder="回答を入力...（Cmd+Enter で送信）" rows="2" onkeydown="handleChatKey(event)"></textarea>
+      <button class="btn btn-primary" onclick="sendReply()" id="btn-send">送信</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToStep(2)">戻る</button>
+      <button class="btn btn-secondary" onclick="skipToGenerate()">インタビューを終了して記事を生成</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Article -->
+  <div class="section" id="step4">
+    <h2 class="section-title">生成された記事</h2>
+    <p class="section-desc">記事をコピーしてX記事エディタに貼り付けてください。</p>
+
+    <div class="article-output" id="article-output"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="copyArticle()">記事をコピー</button>
+      <button class="btn btn-secondary" onclick="saveArticle()">記事を保存</button>
+      <button class="btn btn-ghost" onclick="goToStep(3)">インタビューに戻る</button>
+      <button class="btn btn-ghost" onclick="goToStep(1)">最初からやり直す</button>
+    </div>
+  </div>
+
+  </div><!-- /create-flow -->
+
+  <!-- ==================== REWRITE MODE ==================== -->
+  <div id="rewrite-flow" style="display:none;">
+
+  <div class="steps">
+    <div class="step-indicator active" id="rw-step1-ind">
+      <span class="step-number">1</span><span>元記事 & スタイル</span>
+    </div>
+    <div class="step-indicator" id="rw-step2-ind">
+      <span class="step-number">2</span><span>インタビュー</span>
+    </div>
+    <div class="step-indicator" id="rw-step3-ind">
+      <span class="step-number">3</span><span>リライト記事</span>
+    </div>
+  </div>
+
+  <!-- RW Step 1: Original article + style -->
+  <div class="section visible" id="rw-step1">
+    <h2 class="section-title">リライト元の記事</h2>
+    <p class="section-desc">リライトしたい記事のURLを貼り付けるか、テキストを入力してください。スタイルはライブラリから選択できます。</p>
+
+    <div class="step1-layout">
+      <div class="library-panel">
+        <div class="library-section">
+          <div class="library-header" onclick="toggleLibSection('styles')">
+            <span class="library-header-title">スタイル</span>
+            <span class="library-header-count" id="rw-style-count">0</span>
+          </div>
+          <div class="library-list" id="rw-lib-styles">
+            <div class="library-empty">まだありません</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-panel">
+        <div class="ref-card">
+          <div class="ref-card-header">
+            <span class="ref-card-label">元記事</span>
+            <span class="ref-card-count" id="rw-original-count">0文字</span>
+          </div>
+          <div class="ref-url-row">
+            <input type="text" id="rw-original-url" placeholder="X記事やブログのURLを貼り付け" onkeydown="if(event.key==='Enter')fetchRewriteUrl()">
+            <button class="btn btn-secondary btn-sm" onclick="fetchRewriteUrl()">取得</button>
+          </div>
+          <div class="ref-url-message" id="rw-original-msg" style="display:none;"></div>
+          <div class="ref-meta" id="rw-original-meta" style="display:none;">
+            <span class="ref-meta-title" id="rw-original-meta-title"></span>
+            <span class="ref-meta-author" id="rw-original-meta-author"></span>
+          </div>
+          <textarea id="rw-original" placeholder="リライトしたい記事のテキストを貼り付け..." oninput="document.getElementById('rw-original-count').textContent=this.value.length+'文字'" style="min-height:200px;"></textarea>
+        </div>
+
+        <div class="field" style="margin-top:20px;">
+          <label class="field-label">自分の切り口・メモ（任意）</label>
+          <textarea id="rw-angle" placeholder="この記事をどんな視点でリライトしたいか、自分ならではの経験や補足したいポイントがあれば..." style="min-height:100px;"></textarea>
+        </div>
+
+        <div class="style-preview" id="rw-style-preview" style="display:none;">
+          <summary>適用するスタイルガイド</summary>
+          <div id="rw-style-preview-content"></div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="startRewriteInterview()" id="btn-rw-start">インタビューを開始</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RW Step 2: Interview -->
+  <div class="section" id="rw-step2">
+    <h2 class="section-title">インタビュー</h2>
+    <p class="section-desc">元記事をベースに、あなたの一次情報やエピソードを引き出します。</p>
+
+    <div class="chat-area" id="rw-chat-area"></div>
+
+    <div class="chat-input-area">
+      <textarea id="rw-chat-input" placeholder="回答を入力...（Cmd+Enter で送信）" rows="2" onkeydown="handleRwChatKey(event)"></textarea>
+      <button class="btn btn-primary" onclick="sendRwReply()" id="rw-btn-send">送信</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToRwStep(1)">戻る</button>
+      <button class="btn btn-secondary" onclick="skipToRwGenerate()">インタビューを終了してリライト記事を生成</button>
+    </div>
+  </div>
+
+  <!-- RW Step 3: Generated article -->
+  <div class="section" id="rw-step3">
+    <h2 class="section-title">リライト記事</h2>
+    <p class="section-desc">記事をコピーしてX記事エディタに貼り付けてください。</p>
+
+    <div class="article-output" id="rw-article-output"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="copyRwArticle()">記事をコピー</button>
+      <button class="btn btn-secondary" onclick="saveRwArticle()">記事を保存</button>
+      <button class="btn btn-ghost" onclick="goToRwStep(2)">インタビューに戻る</button>
+      <button class="btn btn-ghost" onclick="goToRwStep(1)">最初からやり直す</button>
+    </div>
+  </div>
+
+  </div><!-- /rewrite-flow -->
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Preview Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title"></div>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<script>
+let state = {
+  styleGuide: null,
+  activeContextId: null,
+  title: "",
+  memo: "",
+  conversation: [],
+  articleHtml: "",
+  contexts: [],
+  articles: [],
+  model: null,
+  sources: [],
+};
+
+function getSelectedModel() {
+  return document.getElementById("model-select").value || null;
+}
+
+async function loadModels() {
+  try {
+    const res = await fetch("/api/models");
+    const data = await res.json();
+    const select = document.getElementById("model-select");
+    select.innerHTML = data.models.map(m =>
+      `<option value="${m.id}" ${m.id === data.default ? "selected" : ""}>${m.name}</option>`
+    ).join("");
+  } catch (e) {
+    console.error("Failed to load models", e);
+  }
+}
+
+// ── Utilities ──
+
+function updateCount(n) {
+  const el = document.getElementById(`ref${n}`);
+  document.getElementById(`ref${n}-count`).textContent = `${el.value.length}文字`;
+}
+
+function goToStep(n) {
+  document.querySelectorAll("#create-flow .section").forEach(s => s.classList.remove("visible"));
+  document.getElementById(`step${n}`).classList.add("visible");
+  document.querySelectorAll("#create-flow .step-indicator").forEach((ind, i) => {
+    ind.classList.remove("active", "done");
+    if (i + 1 < n) ind.classList.add("done");
+    if (i + 1 === n) ind.classList.add("active");
+  });
+  if (n === 2) {
+    const regenBtn = document.getElementById("btn-regen-direct");
+    if (regenBtn && state.conversation.length === 0) {
+      regenBtn.style.display = "none";
+    }
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+function showLoading(container, msg, useGhost = false) {
+  const el = document.createElement("div");
+  el.id = "loading-indicator";
+
+  if (useGhost) {
+    el.className = "ghost-writing-overlay";
+    el.innerHTML = `
+      <img src="/static/ghost-writing.png" alt="Ghost Writing" class="ghost-writing-img">
+      <div class="ghost-pen-lines">
+        <div class="ghost-pen-line"></div>
+        <div class="ghost-pen-line"></div>
+        <div class="ghost-pen-line"></div>
+        <div class="ghost-pen-line"></div>
+      </div>
+      <span class="ghost-writing-text">${msg}</span>
+    `;
+  } else {
+    el.className = "loading";
+    el.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
+  }
+
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+  return el;
+}
+
+function removeLoading() {
+  const el = document.getElementById("loading-indicator");
+  if (el) el.remove();
+}
+
+function addChatBubble(role, content) {
+  const area = document.getElementById("chat-area");
+  const bubble = document.createElement("div");
+  bubble.className = `chat-bubble ${role}`;
+  bubble.textContent = content;
+  area.appendChild(bubble);
+  area.scrollTop = area.scrollHeight;
+}
+
+function getRefValues() {
+  return [
+    document.getElementById("ref1").value,
+    document.getElementById("ref2").value,
+    document.getElementById("ref3").value,
+  ].filter(r => r.trim());
+}
+
+function setRefValues(refs) {
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById(`ref${i + 1}`);
+    el.value = (refs && refs[i]) ? refs[i] : "";
+    updateCount(i + 1);
+  }
+}
+
+// ── Context Management ──
+
+async function loadContexts() {
+  try {
+    const res = await fetch("/api/contexts");
+    const data = await res.json();
+    state.contexts = data.contexts || [];
+    renderContextList();
+  } catch (e) {
+    console.error("Failed to load contexts", e);
+  }
+}
+
+function renderContextList() {
+  const list = document.getElementById("lib-styles");
+  document.getElementById("style-count").textContent = state.contexts.length;
+
+  if (state.contexts.length === 0) {
+    list.innerHTML = '<div class="library-empty">まだありません</div>';
+    return;
+  }
+
+  list.innerHTML = state.contexts.map(ctx => {
+    const refs = (ctx.references || []).filter(r => r && r.trim());
+    const refCount = refs.length;
+    const hasStyle = ctx.style_guide ? "分析済" : "未分析";
+    const isActive = ctx.id === state.activeContextId;
+
+    return `
+      <div class="lib-item ${isActive ? "active" : ""}" onclick="previewStyle('${ctx.id}')">
+        <div class="lib-item-icon style-icon">S</div>
+        <div class="lib-item-info">
+          <div class="lib-item-name">${escapeHtml(ctx.name)}</div>
+          <div class="lib-item-meta">${refCount}件 / ${hasStyle}</div>
+        </div>
+        <span class="lib-item-badge click">詳細</span>
+        <button class="lib-item-delete" onclick="event.stopPropagation(); deleteContext('${ctx.id}')" title="削除">&times;</button>
+      </div>
+    `;
+  }).join("");
+}
+
+function escapeHtml(str) {
+  const d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function selectContext(id) {
+  const ctx = state.contexts.find(c => c.id === id);
+  if (!ctx) return;
+
+  state.activeContextId = id;
+  setRefValues(ctx.references);
+  document.getElementById("ctx-name").value = ctx.name;
+
+  if (ctx.style_guide) {
+    state.styleGuide = ctx.style_guide;
+    renderStylePreview(ctx.style_guide);
+    renderContextList();
+    goToStep(2);
+    showToast(`「${ctx.name}」を読み込みました`);
+  } else {
+    renderContextList();
+    showToast(`「${ctx.name}」の記事を読み込みました。スタイル分析を実行してください。`);
+  }
+}
+
+function editContext(id) {
+  const ctx = state.contexts.find(c => c.id === id);
+  if (!ctx) return;
+
+  state.activeContextId = id;
+  setRefValues(ctx.references);
+  document.getElementById("ctx-name").value = ctx.name;
+  renderContextList();
+  showToast(`「${ctx.name}」を編集モードで開きました。記事を修正して再保存できます。`);
+}
+
+async function deleteContext(id) {
+  const ctx = state.contexts.find(c => c.id === id);
+  if (!ctx) return;
+  if (!confirm(`「${ctx.name}」を削除しますか？`)) return;
+
+  try {
+    await fetch(`/api/contexts/${id}`, { method: "DELETE" });
+    if (state.activeContextId === id) {
+      state.activeContextId = null;
+      state.styleGuide = null;
+      setRefValues([]);
+      document.getElementById("ctx-name").value = "";
+    }
+    await loadContexts();
+    showToast("削除しました");
+  } catch (e) {
+    showToast("削除に失敗しました");
+  }
+}
+
+async function saveAndAnalyze() {
+  const name = document.getElementById("ctx-name").value.trim();
+  const refs = getRefValues();
+
+  if (!name) { showToast("スタイル名を入力してください"); return; }
+  if (refs.length === 0) { showToast("リファレンス記事を1つ以上入力してください"); return; }
+
+  const allRefs = [
+    document.getElementById("ref1").value,
+    document.getElementById("ref2").value,
+    document.getElementById("ref3").value,
+  ];
+
+  const btn = document.querySelector(".save-row .btn");
+  btn.disabled = true;
+  btn.textContent = "分析中...";
+
+  try {
+    const styleGuide = await analyzeStyleAPI(refs);
+    state.styleGuide = styleGuide;
+
+    if (state.activeContextId) {
+      await fetch(`/api/contexts/${state.activeContextId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, references: allRefs, style_guide: styleGuide }),
+      });
+    } else {
+      const res = await fetch("/api/contexts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, references: allRefs, style_guide: styleGuide }),
+      });
+      const data = await res.json();
+      state.activeContextId = data.context.id;
+    }
+
+    await loadContexts();
+    renderStylePreview(styleGuide);
+    goToStep(2);
+    showToast("保存して分析が完了しました");
+  } catch (e) {
+    showToast("エラー: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "保存して分析";
+  }
+}
+
+async function analyzeOnly() {
+  const refs = getRefValues();
+  if (refs.length === 0) { showToast("リファレンス記事を1つ以上入力してください"); return; }
+
+  const btn = document.getElementById("btn-analyze");
+  btn.disabled = true;
+  btn.textContent = "分析中...";
+
+  try {
+    const styleGuide = await analyzeStyleAPI(refs);
+    state.styleGuide = styleGuide;
+    renderStylePreview(styleGuide);
+    goToStep(2);
+    showToast("スタイル分析が完了しました");
+  } catch (e) {
+    showToast("エラー: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "保存せず分析のみ";
+  }
+}
+
+// ── API Calls ──
+
+async function analyzeStyleAPI(refs) {
+  const res = await fetch("/api/analyze-style", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ references: refs, model: getSelectedModel() }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.style_guide;
+}
+
+function renderStylePreview(guide) {
+  const labels = {
+    structure: "構成パターン",
+    tone: "文体・トーン",
+    rhythm: "リズム",
+    expression: "表現技法",
+    emotion: "感情の扱い",
+    opening: "冒頭の書き方",
+    closing: "締めの書き方",
+    formatting: "フォーマット",
+    avoid: "避けるべきこと",
+  };
+  let html = "";
+  for (const [key, label] of Object.entries(labels)) {
+    if (guide[key]) {
+      html += `<div class="style-preview-item"><div class="style-preview-label">${label}</div><div>${escapeHtml(guide[key])}</div></div>`;
+    }
+  }
+  document.getElementById("style-preview-content").innerHTML = html;
+}
+
+async function startInterview() {
+  state.title = document.getElementById("article-title").value;
+  state.memo = document.getElementById("article-memo").value;
+  if (!state.title.trim()) { showToast("タイトルを入力してください"); return; }
+
+  state.conversation = [];
+  document.getElementById("chat-area").innerHTML = "";
+  goToStep(3);
+
+  const chatArea = document.getElementById("chat-area");
+  showLoading(chatArea, "質問を考えています...");
+
+  try {
+    const res = await fetch("/api/interview/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ style_guide: state.styleGuide, title: state.title, memo: state.memo, sources: state.sources, model: getSelectedModel() }),
+    });
+    const data = await res.json();
+    removeLoading();
+    addChatBubble("ai", data.message);
+    state.conversation.push({ role: "assistant", content: data.message });
+  } catch (e) {
+    removeLoading();
+    showToast("エラー: " + e.message);
+  }
+}
+
+function handleChatKey(e) {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    sendReply();
+  }
+}
+
+async function sendReply() {
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+
+  addChatBubble("user", text);
+  state.conversation.push({ role: "user", content: text });
+  input.value = "";
+
+  const chatArea = document.getElementById("chat-area");
+  const btn = document.getElementById("btn-send");
+  btn.disabled = true;
+  showLoading(chatArea, "考えています...");
+
+  try {
+    const res = await fetch("/api/interview/continue", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        style_guide: state.styleGuide,
+        title: state.title,
+        memo: state.memo,
+        conversation: state.conversation,
+        sources: state.sources,
+        model: getSelectedModel(),
+      }),
+    });
+    const data = await res.json();
+    removeLoading();
+    addChatBubble("ai", data.message);
+    state.conversation.push({ role: "assistant", content: data.message });
+    if (data.ready_to_write) await generateArticle();
+  } catch (e) {
+    removeLoading();
+    showToast("エラー: " + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function skipToGenerate() {
+  await generateArticle();
+}
+
+async function generateArticle() {
+  goToStep(4);
+  const output = document.getElementById("article-output");
+  output.innerHTML = "";
+  showLoading(output, "執筆中...", true);
+
+  try {
+    const res = await fetch("/api/generate-article", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        style_guide: state.styleGuide,
+        title: state.title,
+        memo: state.memo,
+        conversation: state.conversation,
+        sources: state.sources,
+        model: getSelectedModel(),
+      }),
+    });
+    const data = await res.json();
+    removeLoading();
+    state.articleHtml = data.article;
+    output.innerHTML = data.article;
+  } catch (e) {
+    removeLoading();
+    showToast("エラー: " + e.message);
+  }
+}
+
+async function copyArticle() {
+  const output = document.getElementById("article-output");
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(output);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/html": new Blob([output.innerHTML], { type: "text/html" }),
+        "text/plain": new Blob([output.innerText], { type: "text/plain" }),
+      }),
+    ]);
+    selection.removeAllRanges();
+    showToast("コピーしました。X記事エディタに貼り付けてください。");
+  } catch (e) {
+    document.execCommand("copy");
+    showToast("コピーしました");
+  }
+}
+
+async function fetchUrl(n) {
+  const urlInput = document.getElementById(`ref${n}-url`);
+  const msgEl = document.getElementById(`ref${n}-msg`);
+  const metaEl = document.getElementById(`ref${n}-meta`);
+  const titleEl = document.getElementById(`ref${n}-meta-title`);
+  const authorEl = document.getElementById(`ref${n}-meta-author`);
+  const textarea = document.getElementById(`ref${n}`);
+  const url = urlInput.value.trim();
+
+  if (!url) { showToast("URLを入力してください"); return; }
+
+  msgEl.style.display = "none";
+  msgEl.className = "ref-url-message";
+  metaEl.style.display = "none";
+
+  const btn = urlInput.nextElementSibling;
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "取得中...";
+
+  try {
+    const res = await fetch("/api/fetch-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    const data = await res.json();
+
+    msgEl.style.display = "block";
+    msgEl.textContent = data.message;
+
+    if (data.text && data.text.trim()) {
+      textarea.value = data.text;
+      updateCount(n);
+      msgEl.classList.add("success");
+
+      const meta = data.meta || {};
+      if (meta.article_title || meta.author) {
+        metaEl.style.display = "flex";
+        titleEl.textContent = meta.article_title || "";
+        authorEl.textContent = meta.author || "";
+      }
+    }
+  } catch (e) {
+    msgEl.style.display = "block";
+    msgEl.textContent = "取得に失敗しました: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+function toggleLibSection(section) {
+  const id = section === 'styles' ? 'lib-styles' : 'lib-articles';
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+}
+
+// ── Article Management ──
+
+async function loadArticles() {
+  try {
+    const res = await fetch("/api/articles");
+    const data = await res.json();
+    state.articles = data.articles || [];
+    renderArticleList();
+  } catch (e) {
+    console.error("Failed to load articles", e);
+  }
+}
+
+function renderArticleList() {
+  const list = document.getElementById("lib-articles");
+  document.getElementById("article-count").textContent = (state.articles || []).length;
+
+  if (!state.articles || state.articles.length === 0) {
+    list.innerHTML = '<div class="library-empty">まだありません</div>';
+    return;
+  }
+
+  list.innerHTML = state.articles.map(art => {
+    const charCount = (art.text || "").length;
+    return `
+      <div class="lib-item draggable"
+           draggable="true"
+           onclick="previewArticle('${art.id}')"
+           ondragstart="onArticleDragStart(event, '${art.id}')"
+           ondragend="onArticleDragEnd(event)">
+        <div class="lib-item-icon article-icon">A</div>
+        <div class="lib-item-info">
+          <div class="lib-item-name">${escapeHtml(art.title)}</div>
+          <div class="lib-item-meta">${charCount}文字</div>
+        </div>
+        <button class="lib-item-regen" onclick="event.stopPropagation(); reuseArticle('${art.id}')" title="スタイルを変えて再生成">再生成</button>
+        <span class="lib-item-badge drag">D&D</span>
+        <button class="lib-item-delete" onclick="event.stopPropagation(); deleteArticle('${art.id}')" title="削除">&times;</button>
+      </div>
+    `;
+  }).join("");
+}
+
+async function saveArticle() {
+  const output = document.getElementById("article-output");
+  const html = output.innerHTML;
+  const text = output.innerText;
+  const title = state.title || "無題";
+
+  try {
+    const res = await fetch("/api/articles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        html,
+        text,
+        memo: state.memo,
+        conversation: state.conversation,
+        context_id: state.activeContextId,
+      }),
+    });
+    const data = await res.json();
+    if (data.error) { showToast(data.error); return; }
+    await loadArticles();
+    showToast(`「${title}」を保存しました`);
+  } catch (e) {
+    showToast("保存に失敗しました");
+  }
+}
+
+async function deleteArticle(id) {
+  const art = (state.articles || []).find(a => a.id === id);
+  if (!art) return;
+  if (!confirm(`「${art.title}」を削除しますか？`)) return;
+
+  try {
+    await fetch(`/api/articles/${id}`, { method: "DELETE" });
+    await loadArticles();
+    showToast("削除しました");
+  } catch (e) {
+    showToast("削除に失敗しました");
+  }
+}
+
+function reuseArticle(id) {
+  const art = (state.articles || []).find(a => a.id === id);
+  if (!art) return;
+
+  state.title = art.title || "";
+  state.memo = art.memo || art.text || "";
+  state.conversation = art.conversation || [];
+
+  document.getElementById("article-title").value = state.title;
+  document.getElementById("article-memo").value = state.memo;
+
+  const regenBtn = document.getElementById("btn-regen-direct");
+  const hasConversationOrMemo = (state.conversation.length > 0) || state.memo;
+  regenBtn.style.display = hasConversationOrMemo ? "inline-flex" : "none";
+
+  if (art.context_id) {
+    const ctx = state.contexts.find(c => c.id === art.context_id);
+    if (ctx && ctx.style_guide) {
+      state.activeContextId = art.context_id;
+      state.styleGuide = ctx.style_guide;
+      renderStylePreview(ctx.style_guide);
+      renderContextList();
+      goToStep(2);
+      showToast(`「${art.title}」の素材を復元しました。スタイルを変えるにはStep 1に戻ってください。`);
+      return;
+    }
+  }
+
+  state.activeContextId = null;
+  state.styleGuide = null;
+  goToStep(1);
+  showToast(`「${art.title}」の素材を復元しました。コンテキストを選択してスタイルを分析してください。`);
+}
+
+async function regenDirect() {
+  if (!state.styleGuide) {
+    showToast("先にスタイル分析を実行してください");
+    return;
+  }
+  await generateArticle();
+}
+
+// ── Drag & Drop ──
+
+let draggedArticleId = null;
+
+function onArticleDragStart(e, articleId) {
+  draggedArticleId = articleId;
+  const item = e.target.closest(".lib-item");
+  if (item) item.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "copy";
+  e.dataTransfer.setData("text/plain", articleId);
+
+  document.querySelectorAll(".ref-card").forEach(card => {
+    card.addEventListener("dragover", onRefCardDragOver);
+    card.addEventListener("dragleave", onRefCardDragLeave);
+    card.addEventListener("drop", onRefCardDrop);
+  });
+}
+
+function onArticleDragEnd(e) {
+  draggedArticleId = null;
+  document.querySelectorAll(".lib-item.dragging").forEach(el => el.classList.remove("dragging"));
+  document.querySelectorAll(".ref-card").forEach(card => {
+    card.classList.remove("drop-target");
+    card.removeEventListener("dragover", onRefCardDragOver);
+    card.removeEventListener("dragleave", onRefCardDragLeave);
+    card.removeEventListener("drop", onRefCardDrop);
+  });
+}
+
+function onRefCardDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "copy";
+  this.classList.add("drop-target");
+}
+
+function onRefCardDragLeave(e) {
+  this.classList.remove("drop-target");
+}
+
+function onRefCardDrop(e) {
+  e.preventDefault();
+  this.classList.remove("drop-target");
+
+  const articleId = e.dataTransfer.getData("text/plain");
+  const art = (state.articles || []).find(a => a.id === articleId);
+  if (!art) return;
+
+  const textarea = this.querySelector("textarea");
+  if (!textarea) return;
+
+  textarea.value = art.text || "";
+  const refIndex = parseInt(textarea.id.replace("ref", ""));
+  if (refIndex) updateCount(refIndex);
+
+  showToast(`「${art.title}」を記事 ${refIndex} にセットしました`);
+}
+
+// ── Sources Management ──
+
+function toggleSources() {
+  const body = document.getElementById("sources-body");
+  body.style.display = body.style.display === "none" ? "block" : "none";
+}
+
+function renderSources() {
+  const list = document.getElementById("sources-list");
+  document.getElementById("sources-count").textContent = state.sources.length;
+
+  if (state.sources.length === 0) {
+    list.innerHTML = '<div class="sources-empty">URLやPDFを追加して、記事執筆の参考資料にできます</div>';
+    return;
+  }
+
+  list.innerHTML = state.sources.map((src, i) => {
+    const iconClass = src.type === "pdf" ? "pdf-icon" : "url-icon";
+    const iconLabel = src.type === "pdf" ? "PDF" : "URL";
+    const charCount = (src.text || "").length;
+    return `
+      <div class="source-item" onclick="previewSource(${i})">
+        <div class="source-item-icon ${iconClass}">${iconLabel}</div>
+        <div class="source-item-info">
+          <div class="source-item-title">${escapeHtml(src.title || "無題")}</div>
+          <div class="source-item-meta">${charCount.toLocaleString()}文字</div>
+        </div>
+        <button class="source-item-delete" onclick="event.stopPropagation(); removeSource(${i})" title="削除">&times;</button>
+      </div>
+    `;
+  }).join("");
+}
+
+async function addSourceUrl() {
+  const input = document.getElementById("source-url-input");
+  const url = input.value.trim();
+  if (!url) { showToast("URLを入力してください"); return; }
+
+  const btn = input.nextElementSibling;
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "取得中...";
+
+  try {
+    const formData = new FormData();
+    formData.append("url", url);
+
+    const res = await fetch("/api/extract-source", { method: "POST", body: formData });
+    const data = await res.json();
+
+    if (data.error) { showToast(data.error); return; }
+    if (!data.text || data.text.length < 10) { showToast(data.message || "テキストを取得できませんでした"); return; }
+
+    state.sources.push({
+      type: "url",
+      title: data.title || url,
+      text: data.text,
+      url: url,
+    });
+    renderSources();
+    input.value = "";
+    showToast(data.message);
+  } catch (e) {
+    showToast("取得に失敗しました: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+async function addSourcePdf(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  showToast("PDFを読み込み中...");
+
+  try {
+    const res = await fetch("/api/extract-source", { method: "POST", body: formData });
+    const data = await res.json();
+
+    if (data.error) { showToast(data.error); return; }
+    if (!data.text || data.text.length < 10) { showToast(data.message || "テキストを抽出できませんでした"); return; }
+
+    state.sources.push({
+      type: "pdf",
+      title: data.title || file.name,
+      text: data.text,
+    });
+    renderSources();
+    showToast(data.message);
+  } catch (e) {
+    showToast("PDF読み込みに失敗しました: " + e.message);
+  } finally {
+    event.target.value = "";
+  }
+}
+
+function removeSource(index) {
+  state.sources.splice(index, 1);
+  renderSources();
+}
+
+function previewSource(index) {
+  const src = state.sources[index];
+  if (!src) return;
+
+  const bodyHtml = `<div style="white-space:pre-wrap;word-wrap:break-word;font-size:14px;color:var(--text-muted);line-height:1.8;">${escapeHtml(src.text || "").substring(0, 5000)}${(src.text || "").length > 5000 ? "\n\n...（以下省略）" : ""}</div>`;
+
+  const footerHtml = `<button class="btn btn-ghost btn-sm" onclick="closeModal()">閉じる</button>`;
+
+  const label = src.type === "pdf" ? "PDF" : "URL";
+  openModal(`[${label}] ${src.title || "無題"}`, bodyHtml, footerHtml);
+}
+
+// ── Modal ──
+
+function openModal(title, bodyHtml, footerHtml) {
+  document.getElementById("modal-title").textContent = title;
+  document.getElementById("modal-body").innerHTML = bodyHtml;
+  document.getElementById("modal-footer").innerHTML = footerHtml || "";
+  document.getElementById("modal-footer").style.display = footerHtml ? "flex" : "none";
+  document.getElementById("modal-overlay").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal(e) {
+  if (e && e.target && e.target !== document.getElementById("modal-overlay")) return;
+  document.getElementById("modal-overlay").classList.remove("show");
+  document.body.style.overflow = "";
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeModal();
+});
+
+function previewArticle(id) {
+  const art = (state.articles || []).find(a => a.id === id);
+  if (!art) return;
+
+  const bodyHtml = art.html
+    ? `<div class="modal-body-article">${art.html}</div>`
+    : `<div class="modal-body-article"><p>${escapeHtml(art.text || "内容なし")}</p></div>`;
+
+  const footerHtml = `
+    <button class="btn btn-secondary btn-sm" onclick="reuseArticle('${art.id}'); closeModal();">再生成</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal()">閉じる</button>
+  `;
+
+  openModal(art.title || "無題", bodyHtml, footerHtml);
+}
+
+function previewStyle(id) {
+  const ctx = state.contexts.find(c => c.id === id);
+  if (!ctx) return;
+
+  const labels = {
+    structure: "構成パターン",
+    tone: "文体・トーン",
+    rhythm: "リズム",
+    expression: "表現技法",
+    emotion: "感情の扱い",
+    opening: "冒頭の書き方",
+    closing: "締めの書き方",
+    formatting: "フォーマット",
+    avoid: "避けるべきこと",
+  };
+
+  let bodyHtml = "";
+  if (ctx.style_guide) {
+    for (const [key, label] of Object.entries(labels)) {
+      if (ctx.style_guide[key]) {
+        bodyHtml += `<div class="modal-style-item"><div class="modal-style-label">${label}</div><div class="modal-style-value">${escapeHtml(ctx.style_guide[key])}</div></div>`;
+      }
+    }
+  } else {
+    bodyHtml = '<p style="color:var(--text-dim);">スタイルガイドはまだ分析されていません。</p>';
+  }
+
+  const refInfo = (ctx.references || []).filter(r => r && r.trim());
+  const subtitle = `リファレンス ${refInfo.length}件`;
+
+  const footerHtml = `
+    <button class="btn btn-primary btn-sm" onclick="selectContext('${ctx.id}'); closeModal();">このスタイルで作成</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal()">閉じる</button>
+  `;
+
+  openModal(`${ctx.name}（${subtitle}）`, bodyHtml, footerHtml);
+}
+
+// ── Mode Switching ──
+
+let currentMode = "create";
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById("mode-create").classList.toggle("active", mode === "create");
+  document.getElementById("mode-rewrite").classList.toggle("active", mode === "rewrite");
+  document.getElementById("create-flow").style.display = mode === "create" ? "block" : "none";
+  document.getElementById("rewrite-flow").style.display = mode === "rewrite" ? "block" : "none";
+
+  if (mode === "rewrite") {
+    renderRwStyleList();
+  }
+}
+
+// ── Rewrite Mode ──
+
+let rwState = {
+  originalArticle: "",
+  originalTitle: "",
+  userAngle: "",
+  styleGuide: null,
+  activeContextId: null,
+  conversation: [],
+  articleHtml: "",
+  sources: [],
+};
+
+function goToRwStep(n) {
+  document.querySelectorAll("#rewrite-flow .section").forEach(s => s.classList.remove("visible"));
+  document.getElementById(`rw-step${n}`).classList.add("visible");
+  document.querySelectorAll("#rewrite-flow .step-indicator").forEach((ind, i) => {
+    ind.classList.remove("active", "done");
+    if (i + 1 < n) ind.classList.add("done");
+    if (i + 1 === n) ind.classList.add("active");
+  });
+}
+
+function renderRwStyleList() {
+  const list = document.getElementById("rw-lib-styles");
+  const countEl = document.getElementById("rw-style-count");
+  countEl.textContent = state.contexts.length;
+
+  if (state.contexts.length === 0) {
+    list.innerHTML = '<div class="library-empty">新規作成モードでスタイルを作成してください</div>';
+    return;
+  }
+
+  list.innerHTML = state.contexts.map(ctx => {
+    const refs = (ctx.references || []).filter(r => r && r.trim());
+    const isActive = ctx.id === rwState.activeContextId;
+
+    return `
+      <div class="lib-item ${isActive ? "active" : ""}" onclick="selectRwContext('${ctx.id}')">
+        <div class="lib-item-icon style-icon">S</div>
+        <div class="lib-item-info">
+          <div class="lib-item-name">${escapeHtml(ctx.name)}</div>
+          <div class="lib-item-meta">${refs.length}件 / ${ctx.style_guide ? "分析済" : "未分析"}</div>
+        </div>
+        <span class="lib-item-badge click">選択</span>
+      </div>
+    `;
+  }).join("");
+}
+
+function selectRwContext(id) {
+  const ctx = state.contexts.find(c => c.id === id);
+  if (!ctx) return;
+
+  rwState.activeContextId = id;
+  rwState.styleGuide = ctx.style_guide;
+
+  if (ctx.style_guide) {
+    const preview = document.getElementById("rw-style-preview");
+    preview.style.display = "block";
+    const labels = {
+      structure: "構成パターン", tone: "文体・トーン", rhythm: "リズム",
+      expression: "表現技法", emotion: "感情の扱い", opening: "冒頭の書き方",
+      closing: "締めの書き方", formatting: "フォーマット", avoid: "避けるべきこと",
+    };
+    let html = "";
+    for (const [key, label] of Object.entries(labels)) {
+      if (ctx.style_guide[key]) {
+        html += `<div class="style-preview-item"><div class="style-preview-label">${label}</div><div>${escapeHtml(ctx.style_guide[key])}</div></div>`;
+      }
+    }
+    document.getElementById("rw-style-preview-content").innerHTML = html;
+  }
+
+  renderRwStyleList();
+  showToast(`スタイル「${ctx.name}」を選択しました`);
+}
+
+async function fetchRewriteUrl() {
+  const urlInput = document.getElementById("rw-original-url");
+  const msgEl = document.getElementById("rw-original-msg");
+  const metaEl = document.getElementById("rw-original-meta");
+  const textarea = document.getElementById("rw-original");
+  const url = urlInput.value.trim();
+
+  if (!url) { showToast("URLを入力してください"); return; }
+
+  msgEl.style.display = "none";
+  metaEl.style.display = "none";
+
+  const btn = urlInput.nextElementSibling;
+  btn.disabled = true;
+  btn.textContent = "取得中...";
+
+  try {
+    const formData = new FormData();
+    formData.append("url", url);
+    const res = await fetch("/api/extract-source", { method: "POST", body: formData });
+    const data = await res.json();
+
+    if (data.error) { showToast(data.error); return; }
+
+    msgEl.style.display = "block";
+    msgEl.textContent = data.message || "";
+    msgEl.className = "ref-url-message" + (data.text ? " success" : "");
+
+    if (data.text) {
+      textarea.value = data.text;
+      document.getElementById("rw-original-count").textContent = data.text.length + "文字";
+      rwState.originalTitle = data.title || "";
+
+      if (data.title) {
+        metaEl.style.display = "flex";
+        document.getElementById("rw-original-meta-title").textContent = data.title;
+        document.getElementById("rw-original-meta-author").textContent = "";
+      }
+    }
+  } catch (e) {
+    msgEl.style.display = "block";
+    msgEl.textContent = "取得に失敗しました: " + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "取得";
+  }
+}
+
+async function startRewriteInterview() {
+  rwState.originalArticle = document.getElementById("rw-original").value;
+  rwState.userAngle = document.getElementById("rw-angle").value;
+
+  if (!rwState.originalArticle.trim()) { showToast("元記事を入力してください"); return; }
+  if (!rwState.styleGuide) { showToast("スタイルを選択してください"); return; }
+
+  rwState.conversation = [];
+  document.getElementById("rw-chat-area").innerHTML = "";
+  goToRwStep(2);
+
+  const chatArea = document.getElementById("rw-chat-area");
+  showLoading(chatArea, "元記事を分析して質問を考えています...");
+
+  try {
+    const res = await fetch("/api/rewrite/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        style_guide: rwState.styleGuide,
+        original_article: rwState.originalArticle,
+        user_angle: rwState.userAngle,
+        model: getSelectedModel(),
+      }),
+    });
+    const data = await res.json();
+    removeLoading();
+    addRwChatBubble("ai", data.message);
+    rwState.conversation.push({ role: "assistant", content: data.message });
+  } catch (e) {
+    removeLoading();
+    showToast("エラー: " + e.message);
+  }
+}
+
+function addRwChatBubble(role, content) {
+  const area = document.getElementById("rw-chat-area");
+  const bubble = document.createElement("div");
+  bubble.className = `chat-bubble ${role}`;
+  bubble.textContent = content;
+  area.appendChild(bubble);
+  area.scrollTop = area.scrollHeight;
+}
+
+function handleRwChatKey(e) {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    sendRwReply();
+  }
+}
+
+async function sendRwReply() {
+  const input = document.getElementById("rw-chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+
+  addRwChatBubble("user", text);
+  rwState.conversation.push({ role: "user", content: text });
+  input.value = "";
+
+  const chatArea = document.getElementById("rw-chat-area");
+  const btn = document.getElementById("rw-btn-send");
+  btn.disabled = true;
+  showLoading(chatArea, "考えています...");
+
+  try {
+    const res = await fetch("/api/rewrite/continue", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        style_guide: rwState.styleGuide,
+        original_article: rwState.originalArticle,
+        user_angle: rwState.userAngle,
+        conversation: rwState.conversation,
+        model: getSelectedModel(),
+      }),
+    });
+    const data = await res.json();
+    removeLoading();
+    addRwChatBubble("ai", data.message);
+    rwState.conversation.push({ role: "assistant", content: data.message });
+    if (data.ready_to_write) await generateRwArticle();
+  } catch (e) {
+    removeLoading();
+    showToast("エラー: " + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function skipToRwGenerate() {
+  await generateRwArticle();
+}
+
+async function generateRwArticle() {
+  goToRwStep(3);
+  const output = document.getElementById("rw-article-output");
+  output.innerHTML = "";
+  showLoading(output, "執筆中...", true);
+
+  try {
+    const res = await fetch("/api/rewrite/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        style_guide: rwState.styleGuide,
+        original_article: rwState.originalArticle,
+        user_angle: rwState.userAngle,
+        conversation: rwState.conversation,
+        sources: rwState.sources,
+        model: getSelectedModel(),
+      }),
+    });
+    const data = await res.json();
+    removeLoading();
+    rwState.articleHtml = data.article;
+    output.innerHTML = data.article;
+  } catch (e) {
+    removeLoading();
+    showToast("エラー: " + e.message);
+  }
+}
+
+async function copyRwArticle() {
+  const output = document.getElementById("rw-article-output");
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(output);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/html": new Blob([output.innerHTML], { type: "text/html" }),
+        "text/plain": new Blob([output.innerText], { type: "text/plain" }),
+      }),
+    ]);
+    selection.removeAllRanges();
+    showToast("コピーしました。X記事エディタに貼り付けてください。");
+  } catch (e) {
+    document.execCommand("copy");
+    showToast("コピーしました");
+  }
+}
+
+async function saveRwArticle() {
+  const output = document.getElementById("rw-article-output");
+  const html = output.innerHTML;
+  const text = output.innerText;
+  const title = rwState.originalTitle || "リライト記事";
+
+  try {
+    const res = await fetch("/api/articles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "[RW] " + title,
+        html,
+        text,
+        memo: rwState.userAngle,
+        conversation: rwState.conversation,
+        context_id: rwState.activeContextId,
+      }),
+    });
+    const data = await res.json();
+    if (data.error) { showToast(data.error); return; }
+    await loadArticles();
+    showToast(`「${title}」を保存しました`);
+  } catch (e) {
+    showToast("保存に失敗しました");
+  }
+}
+
+// ── Init ──
+loadModels();
+loadContexts();
+loadArticles();
+renderSources();
+</script>
+</body>
+</html>
