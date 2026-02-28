@@ -1010,6 +1010,7 @@
     display: flex;
     flex-direction: column;
     animation: modalSlideIn 0.2s ease;
+    position: relative;
   }
 
   @keyframes modalSlideIn {
@@ -1126,6 +1127,12 @@
     padding: 16px 24px;
     border-top: 1px solid var(--border);
     flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .modal > .edit-popover {
+    position: absolute;
+    z-index: 210;
   }
 
   /* Sources panel (Step 2) */
@@ -1294,6 +1301,86 @@
     font-size: 14px;
   }
 
+  /* Selection edit popover */
+  .edit-popover {
+    position: absolute;
+    z-index: 50;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    display: none;
+    width: 340px;
+    animation: modalSlideIn 0.15s ease;
+  }
+
+  .edit-popover.show { display: block; }
+
+  .edit-popover-selected {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .edit-popover-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .edit-popover-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 13px;
+    padding: 8px 14px;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .edit-popover-row input:focus {
+    border-color: var(--x-blue);
+  }
+
+  .edit-popover-row input::placeholder {
+    color: var(--text-dim);
+  }
+
+  /* Full article edit bar */
+  .edit-full-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+    max-width: 700px;
+  }
+
+  .edit-full-bar input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 12px 20px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+
+  .edit-full-bar input:focus {
+    border-color: var(--x-blue);
+  }
+
+  .edit-full-bar input::placeholder {
+    color: var(--text-dim);
+  }
+
   /* Mode switcher */
   .mode-switcher {
     display: flex;
@@ -1329,6 +1416,7 @@
     background: var(--x-blue);
     color: #fff;
   }
+
 
   /* Ghost writing animation */
   .ghost-writing-overlay {
@@ -1590,7 +1678,21 @@
     <h2 class="section-title">生成された記事</h2>
     <p class="section-desc">記事をコピーしてX記事エディタに貼り付けてください。</p>
 
-    <div class="article-output" id="article-output"></div>
+    <div class="edit-full-bar">
+      <input type="text" id="edit-full-input" placeholder="記事全体への修正指示を入力…" onkeydown="handleEditFullKey(event, 'create')">
+      <button class="btn btn-primary" onclick="submitEditFull('create')">修正</button>
+    </div>
+
+    <div style="position:relative;">
+      <div class="article-output" id="article-output"></div>
+      <div class="edit-popover" id="edit-popover">
+        <div class="edit-popover-selected" id="edit-popover-selected"></div>
+        <div class="edit-popover-row">
+          <input type="text" id="edit-popover-input" placeholder="選択箇所への修正指示…" onkeydown="handleEditPopoverKey(event, 'create')">
+          <button class="btn btn-primary btn-sm" onclick="submitEditSelection('create')">修正</button>
+        </div>
+      </div>
+    </div>
 
     <div class="btn-row">
       <button class="btn btn-primary" onclick="copyArticle()">記事をコピー</button>
@@ -1598,6 +1700,7 @@
       <button class="btn btn-ghost" onclick="goToStep(3)">インタビューに戻る</button>
       <button class="btn btn-ghost" onclick="goToStep(1)">最初からやり直す</button>
     </div>
+
   </div>
 
   </div><!-- /create-flow -->
@@ -1693,7 +1796,21 @@
     <h2 class="section-title">リライト記事</h2>
     <p class="section-desc">記事をコピーしてX記事エディタに貼り付けてください。</p>
 
-    <div class="article-output" id="rw-article-output"></div>
+    <div class="edit-full-bar">
+      <input type="text" id="rw-edit-full-input" placeholder="記事全体への修正指示を入力…" onkeydown="handleEditFullKey(event, 'rewrite')">
+      <button class="btn btn-primary" onclick="submitEditFull('rewrite')">修正</button>
+    </div>
+
+    <div style="position:relative;">
+      <div class="article-output" id="rw-article-output"></div>
+      <div class="edit-popover" id="rw-edit-popover">
+        <div class="edit-popover-selected" id="rw-edit-popover-selected"></div>
+        <div class="edit-popover-row">
+          <input type="text" id="rw-edit-popover-input" placeholder="選択箇所への修正指示…" onkeydown="handleEditPopoverKey(event, 'rewrite')">
+          <button class="btn btn-primary btn-sm" onclick="submitEditSelection('rewrite')">修正</button>
+        </div>
+      </div>
+    </div>
 
     <div class="btn-row">
       <button class="btn btn-primary" onclick="copyRwArticle()">記事をコピー</button>
@@ -1701,6 +1818,7 @@
       <button class="btn btn-ghost" onclick="goToRwStep(2)">インタビューに戻る</button>
       <button class="btn btn-ghost" onclick="goToRwStep(1)">最初からやり直す</button>
     </div>
+
   </div>
 
   </div><!-- /rewrite-flow -->
@@ -1716,7 +1834,18 @@
       <div class="modal-title" id="modal-title"></div>
       <button class="modal-close" onclick="closeModal()">&times;</button>
     </div>
-    <div class="modal-body" id="modal-body"></div>
+    <div id="modal-edit-bar" class="edit-full-bar" style="display:none; padding: 12px 24px 0;">
+      <input type="text" id="modal-edit-full-input" placeholder="記事全体への修正指示を入力…" onkeydown="handleEditFullKey(event, 'modal')">
+      <button class="btn btn-primary btn-sm" onclick="submitEditFull('modal')">修正</button>
+    </div>
+    <div class="modal-body" id="modal-body" style="position:relative;"></div>
+    <div class="edit-popover" id="modal-edit-popover">
+      <div class="edit-popover-selected" id="modal-edit-popover-selected"></div>
+      <div class="edit-popover-row">
+        <input type="text" id="modal-edit-popover-input" placeholder="選択箇所への修正指示…" onkeydown="handleEditPopoverKey(event, 'modal')">
+        <button class="btn btn-primary btn-sm" onclick="submitEditSelection('modal')">修正</button>
+      </div>
+    </div>
     <div class="modal-footer" id="modal-footer"></div>
   </div>
 </div>
@@ -2534,11 +2663,14 @@ function previewSource(index) {
 
 // ── Modal ──
 
-function openModal(title, bodyHtml, footerHtml) {
+function openModal(title, bodyHtml, footerHtml, showEditBar = false) {
   document.getElementById("modal-title").textContent = title;
   document.getElementById("modal-body").innerHTML = bodyHtml;
   document.getElementById("modal-footer").innerHTML = footerHtml || "";
   document.getElementById("modal-footer").style.display = footerHtml ? "flex" : "none";
+  document.getElementById("modal-edit-bar").style.display = showEditBar ? "flex" : "none";
+  document.getElementById("modal-edit-popover").classList.remove("show");
+  if (!showEditBar) modalEditingArticleId = null;
   document.getElementById("modal-overlay").classList.add("show");
   document.body.style.overflow = "hidden";
 }
@@ -2553,20 +2685,27 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape") closeModal();
 });
 
+let modalEditingArticleId = null;
+
 function previewArticle(id) {
   const art = (state.articles || []).find(a => a.id === id);
   if (!art) return;
 
+  modalEditingArticleId = id;
+
   const bodyHtml = art.html
-    ? `<div class="modal-body-article">${art.html}</div>`
-    : `<div class="modal-body-article"><p>${escapeHtml(art.text || "内容なし")}</p></div>`;
+    ? `<div class="modal-body-article" id="modal-article-content">${art.html}</div>`
+    : `<div class="modal-body-article" id="modal-article-content"><p>${escapeHtml(art.text || "内容なし")}</p></div>`;
 
   const footerHtml = `
+    <button class="btn btn-primary btn-sm" onclick="overwriteArticle()">上書き保存</button>
+    <button class="btn btn-secondary btn-sm" onclick="saveAsNewArticle()">新規保存</button>
     <button class="btn btn-secondary btn-sm" onclick="reuseArticle('${art.id}'); closeModal();">再生成</button>
     <button class="btn btn-ghost btn-sm" onclick="closeModal()">閉じる</button>
   `;
 
-  openModal(art.title || "無題", bodyHtml, footerHtml);
+  openModal(art.title || "無題", bodyHtml, footerHtml, true);
+  setupModalSelectionListener();
 }
 
 function previewStyle(id) {
@@ -2917,6 +3056,276 @@ async function saveRwArticle() {
     if (data.error) { showToast(data.error); return; }
     await loadArticles();
     showToast(`「${title}」を保存しました`);
+  } catch (e) {
+    showToast("保存に失敗しました");
+  }
+}
+
+// ── Article Editing (Selection & Full) ──
+
+let editSelectedText = "";
+let editSelectedMode = "";
+
+function setupSelectionListener(outputEl, popoverEl, selectedLabelEl, mode) {
+  outputEl.addEventListener("mouseup", () => {
+    const sel = window.getSelection();
+    const text = sel ? sel.toString().trim() : "";
+    if (!text || text.length < 2) {
+      popoverEl.classList.remove("show");
+      editSelectedText = "";
+      return;
+    }
+
+    const range = sel.getRangeAt(0);
+    if (!outputEl.contains(range.commonAncestorContainer)) {
+      popoverEl.classList.remove("show");
+      return;
+    }
+
+    editSelectedText = text;
+    editSelectedMode = mode;
+
+    const rect = range.getBoundingClientRect();
+    const parentRect = outputEl.parentElement.getBoundingClientRect();
+
+    let top = rect.bottom - parentRect.top + 8;
+    let left = rect.left - parentRect.left;
+    if (left + 340 > parentRect.width) left = parentRect.width - 350;
+    if (left < 0) left = 0;
+
+    popoverEl.style.top = top + "px";
+    popoverEl.style.left = left + "px";
+    selectedLabelEl.textContent = "選択: 「" + (text.length > 50 ? text.slice(0, 50) + "…" : text) + "」";
+    popoverEl.classList.add("show");
+
+    const input = popoverEl.querySelector("input");
+    input.value = "";
+    setTimeout(() => input.focus(), 50);
+  });
+}
+
+document.addEventListener("mousedown", (e) => {
+  const pop1 = document.getElementById("edit-popover");
+  const pop2 = document.getElementById("rw-edit-popover");
+  const pop3 = document.getElementById("modal-edit-popover");
+  if (pop1 && !pop1.contains(e.target) && !document.getElementById("article-output").contains(e.target)) {
+    pop1.classList.remove("show");
+  }
+  if (pop2 && !pop2.contains(e.target) && !document.getElementById("rw-article-output").contains(e.target)) {
+    pop2.classList.remove("show");
+  }
+  const modalContent = document.getElementById("modal-article-content");
+  if (pop3 && !pop3.contains(e.target) && (!modalContent || !modalContent.contains(e.target))) {
+    pop3.classList.remove("show");
+  }
+});
+
+function handleEditPopoverKey(e, mode) {
+  if (e.key === "Enter") submitEditSelection(mode);
+  if (e.key === "Escape") {
+    const idMap = { create: "edit-popover", rewrite: "rw-edit-popover", modal: "modal-edit-popover" };
+    document.getElementById(idMap[mode] || "edit-popover").classList.remove("show");
+  }
+}
+
+function handleEditFullKey(e, mode) {
+  if (e.key === "Enter") submitEditFull(mode);
+}
+
+async function submitEditSelection(mode) {
+  const elMap = {
+    create:  { output: "article-output",         popover: "edit-popover",         input: "edit-popover-input" },
+    rewrite: { output: "rw-article-output",       popover: "rw-edit-popover",      input: "rw-edit-popover-input" },
+    modal:   { output: "modal-article-content",   popover: "modal-edit-popover",   input: "modal-edit-popover-input" },
+  };
+  const ids = elMap[mode] || elMap.create;
+  const outputEl = document.getElementById(ids.output);
+  const popoverEl = document.getElementById(ids.popover);
+  const inputEl = document.getElementById(ids.input);
+  const instruction = inputEl.value.trim();
+
+  if (!instruction || !editSelectedText) return;
+
+  popoverEl.classList.remove("show");
+  showLoading("修正中…");
+
+  const sg = mode === "modal" ? {} : (mode === "create" ? state.styleGuide : rwState.styleGuide);
+
+  try {
+    const res = await fetch("/api/article/edit-selection", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        full_html: outputEl.innerHTML,
+        selected_text: editSelectedText,
+        instruction: instruction,
+        style_guide: sg,
+        model: state.selectedModel,
+      }),
+    });
+    const data = await res.json();
+    hideLoading();
+    if (data.error) { showToast(data.error); return; }
+    outputEl.innerHTML = data.article;
+    showToast("修正を反映しました");
+  } catch (e) {
+    hideLoading();
+    showToast("修正に失敗しました");
+  }
+}
+
+async function submitEditFull(mode) {
+  const elMap = {
+    create:  { output: "article-output",       input: "edit-full-input" },
+    rewrite: { output: "rw-article-output",    input: "rw-edit-full-input" },
+    modal:   { output: "modal-article-content", input: "modal-edit-full-input" },
+  };
+  const ids = elMap[mode] || elMap.create;
+  const outputEl = document.getElementById(ids.output);
+  const inputEl = document.getElementById(ids.input);
+  const instruction = inputEl.value.trim();
+
+  if (!instruction) return;
+
+  showLoading("修正中…");
+
+  const sg = mode === "modal" ? {} : (mode === "create" ? state.styleGuide : rwState.styleGuide);
+
+  try {
+    const res = await fetch("/api/article/edit-full", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        full_html: outputEl.innerHTML,
+        instruction: instruction,
+        style_guide: sg,
+        model: state.selectedModel,
+      }),
+    });
+    const data = await res.json();
+    hideLoading();
+    if (data.error) { showToast(data.error); return; }
+    outputEl.innerHTML = data.article;
+    inputEl.value = "";
+    showToast("修正を反映しました");
+  } catch (e) {
+    hideLoading();
+    showToast("修正に失敗しました");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const createOutput = document.getElementById("article-output");
+  const createPopover = document.getElementById("edit-popover");
+  const createLabel = document.getElementById("edit-popover-selected");
+  if (createOutput && createPopover) {
+    setupSelectionListener(createOutput, createPopover, createLabel, "create");
+  }
+
+  const rwOutput = document.getElementById("rw-article-output");
+  const rwPopover = document.getElementById("rw-edit-popover");
+  const rwLabel = document.getElementById("rw-edit-popover-selected");
+  if (rwOutput && rwPopover) {
+    setupSelectionListener(rwOutput, rwPopover, rwLabel, "rewrite");
+  }
+});
+
+// ── Modal Article Editing (overwrite / save-as-new) ──
+
+function setupModalSelectionListener() {
+  setTimeout(() => {
+    const outputEl = document.getElementById("modal-article-content");
+    const popoverEl = document.getElementById("modal-edit-popover");
+    const labelEl = document.getElementById("modal-edit-popover-selected");
+    if (!outputEl || !popoverEl) return;
+
+    outputEl.onmouseup = () => {
+      const sel = window.getSelection();
+      const text = sel ? sel.toString().trim() : "";
+      if (!text || text.length < 2) {
+        popoverEl.classList.remove("show");
+        editSelectedText = "";
+        return;
+      }
+      const range = sel.getRangeAt(0);
+      if (!outputEl.contains(range.commonAncestorContainer)) {
+        popoverEl.classList.remove("show");
+        return;
+      }
+
+      editSelectedText = text;
+      editSelectedMode = "modal";
+
+      const rect = range.getBoundingClientRect();
+      const modalEl = outputEl.closest(".modal");
+      const modalRect = modalEl.getBoundingClientRect();
+
+      let top = rect.bottom - modalRect.top + 8;
+      let left = rect.left - modalRect.left;
+      if (left + 340 > modalRect.width) left = modalRect.width - 350;
+      if (left < 0) left = 0;
+
+      popoverEl.style.top = top + "px";
+      popoverEl.style.left = left + "px";
+      labelEl.textContent = "選択: 「" + (text.length > 50 ? text.slice(0, 50) + "…" : text) + "」";
+      popoverEl.classList.add("show");
+
+      const input = popoverEl.querySelector("input");
+      input.value = "";
+      setTimeout(() => input.focus(), 50);
+    };
+  }, 100);
+}
+
+async function overwriteArticle() {
+  if (!modalEditingArticleId) return;
+  const contentEl = document.getElementById("modal-article-content");
+  if (!contentEl) return;
+
+  try {
+    const res = await fetch(`/api/articles/${modalEditingArticleId}`, {
+      method: "PUT",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        html: contentEl.innerHTML,
+        text: contentEl.innerText,
+      }),
+    });
+    const data = await res.json();
+    if (data.error) { showToast(data.error); return; }
+    await loadArticles();
+    showToast("上書き保存しました");
+  } catch (e) {
+    showToast("保存に失敗しました");
+  }
+}
+
+async function saveAsNewArticle() {
+  const contentEl = document.getElementById("modal-article-content");
+  if (!contentEl) return;
+
+  const art = (state.articles || []).find(a => a.id === modalEditingArticleId);
+  const baseTitle = art ? art.title : "無題";
+  const title = prompt("新規保存する記事のタイトルを入力してください", baseTitle + "（修正版）");
+  if (!title) return;
+
+  try {
+    const res = await fetch("/api/articles", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        title: title,
+        html: contentEl.innerHTML,
+        text: contentEl.innerText,
+        memo: art ? art.memo : "",
+        conversation: art ? art.conversation : [],
+        context_id: art ? art.context_id : null,
+      }),
+    });
+    const data = await res.json();
+    if (data.error) { showToast(data.error); return; }
+    await loadArticles();
+    showToast(`「${title}」を新規保存しました`);
   } catch (e) {
     showToast("保存に失敗しました");
   }

@@ -787,12 +787,97 @@ def create_article():
     return jsonify({"article": article})
 
 
+@app.route("/api/articles/<article_id>", methods=["PUT"])
+def update_article(article_id):
+    data = request.json
+    articles = load_articles()
+    idx = next((i for i, a in enumerate(articles) if a["id"] == article_id), None)
+    if idx is None:
+        return jsonify({"error": "記事が見つかりません"}), 404
+
+    articles[idx]["html"] = data.get("html", articles[idx].get("html", ""))
+    articles[idx]["text"] = data.get("text", articles[idx].get("text", ""))
+    if data.get("title"):
+        articles[idx]["title"] = data["title"]
+    articles[idx]["updated_at"] = datetime.now().isoformat()
+    save_articles(articles)
+    return jsonify({"article": articles[idx]})
+
+
 @app.route("/api/articles/<article_id>", methods=["DELETE"])
 def delete_article(article_id):
     articles = load_articles()
     articles = [a for a in articles if a["id"] != article_id]
     save_articles(articles)
     return jsonify({"success": True})
+
+
+@app.route("/api/article/edit-selection", methods=["POST"])
+def edit_selection():
+    data = request.json
+    full_html = data.get("full_html", "")
+    selected_text = data.get("selected_text", "")
+    instruction = data.get("instruction", "")
+    style_guide = data.get("style_guide", {})
+    model = data.get("model")
+
+    system = "あなたは長文エッセイの編集者です。記事の一部を修正してください。日本語で応答してください。"
+    user = f"""## 記事全体（HTML）
+{full_html}
+
+## 修正対象のテキスト
+「{selected_text}」
+
+## 修正指示
+{instruction}
+
+## ルール
+- 修正対象の部分だけを書き換えた、記事全体のHTMLを返してください
+- 修正対象以外の部分は一切変えないでください
+- スタイルガイドのトーンを維持してください
+- 使用するHTMLタグ: h1, h2, hr, b, p, br のみ
+- HTMLタグだけを出力し、コードブロック記法で囲まないでください"""
+
+    if style_guide:
+        user = f"## スタイルガイド\n{json.dumps(style_guide, ensure_ascii=False)}\n\n" + user
+
+    try:
+        result = call_claude(system, user, model=model)
+        return jsonify({"article": result})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/article/edit-full", methods=["POST"])
+def edit_full():
+    data = request.json
+    full_html = data.get("full_html", "")
+    instruction = data.get("instruction", "")
+    style_guide = data.get("style_guide", {})
+    model = data.get("model")
+
+    system = "あなたは長文エッセイの編集者です。記事全体に対して修正指示に従って書き換えてください。日本語で応答してください。"
+    user = f"""## 記事全体（HTML）
+{full_html}
+
+## 修正指示
+{instruction}
+
+## ルール
+- 修正指示に従って記事全体を修正してください
+- 指示に関係ない部分はできるだけ維持してください
+- スタイルガイドのトーンを維持してください
+- 使用するHTMLタグ: h1, h2, hr, b, p, br のみ
+- HTMLタグだけを出力し、コードブロック記法で囲まないでください"""
+
+    if style_guide:
+        user = f"## スタイルガイド\n{json.dumps(style_guide, ensure_ascii=False)}\n\n" + user
+
+    try:
+        result = call_claude(system, user, model=model)
+        return jsonify({"article": result})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
