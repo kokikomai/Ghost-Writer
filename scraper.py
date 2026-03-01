@@ -27,7 +27,7 @@ def fetch_tweet_via_api(tweet_id):
             "X-RapidAPI-Key": RAPIDAPI_KEY,
             "X-RapidAPI-Host": RAPIDAPI_HOST,
         },
-        timeout=15,
+        timeout=8,
     )
     resp.raise_for_status()
     return resp.json()

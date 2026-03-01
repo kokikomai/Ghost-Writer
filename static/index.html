@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ghost Writer</title>
 <link rel="icon" type="image/png" href="/static/ghost-icon.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #ffffff;
@@ -893,11 +894,81 @@
     max-width: 680px;
   }
 
-  /* Responsive */
+  /* Responsive - SP */
   @media (max-width: 640px) {
     .app { padding: 16px 16px 60px; }
-    .article-output { padding: 24px 20px; }
+
+    .app-header { flex-wrap: wrap; gap: 12px; }
+    .app-header-left { gap: 8px; }
+    .app-title { font-size: 18px; }
+    .app-subtitle { display: none; }
+    .model-selector { display: none; }
+    .user-info { order: 3; }
+    .user-email { max-width: 150px; }
+
+    .steps { overflow-x: auto; }
+    .step-indicator { gap: 0; padding: 12px 0; font-size: 13px; }
+    .step-indicator span:not(.step-number) { display: none; }
+
+    .section-title { font-size: 17px; }
+    .section-desc { font-size: 13px; margin-bottom: 20px; }
+
     .step1-layout { gap: 20px; }
+    .library-panel { position: static; }
+
+    .ref-card { padding: 16px; }
+    .ref-url-row { flex-wrap: wrap; }
+    .ref-url-row input { flex: none; width: 100%; }
+    .ref-url-row .btn { flex: none; width: 100%; }
+    .ref-card textarea { min-height: 120px; font-size: 14px; }
+    .ref-meta { flex-wrap: wrap; gap: 6px; }
+
+    .save-row { flex-wrap: wrap; }
+    .save-row input { width: 100%; flex: none; }
+
+    .field input, .field textarea { padding: 12px 16px; font-size: 14px; }
+    .field textarea { min-height: 120px; }
+
+    .btn { padding: 10px 20px; font-size: 14px; }
+    .btn-row { flex-direction: column; }
+    .btn-row .btn { width: 100%; }
+
+    .chat-area { max-width: 100%; }
+    .chat-bubble { max-width: 92%; padding: 12px 16px; font-size: 14px; }
+    .chat-input-area { max-width: 100%; gap: 8px; }
+    .chat-input-area textarea { padding: 12px 16px; font-size: 14px; }
+
+    .article-output { padding: 24px 20px; font-size: 15px; max-width: 100%; }
+    .article-output h1 { font-size: 20px; }
+    .article-output h2 { font-size: 16px; }
+
+    .edit-full-bar { flex-wrap: wrap; max-width: 100%; }
+    .edit-full-bar input { flex: none; width: 100%; }
+    .edit-full-bar .btn { width: 100%; }
+    .edit-popover { width: calc(100vw - 32px); max-width: 340px; left: 16px !important; right: 16px !important; }
+
+    .content-narrow { max-width: 100%; }
+    .mode-switcher { max-width: 100%; }
+
+    .modal { max-height: 90vh; }
+    .modal-header { padding: 16px; }
+    .modal-body { padding: 16px; }
+    .modal-footer { padding: 12px 16px; }
+
+    .sources-add-row { flex-wrap: wrap; }
+    .sources-add-row input[type="text"] { flex: none; width: 100%; }
+    .sources-add-row .btn { width: 100%; }
+
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .dashboard-card { padding: 16px; }
+
+    .auth-container { padding: 24px 20px; margin: 0 16px; }
+    .auth-title { font-size: 22px; }
+
+    .toast { left: 16px; right: 16px; transform: translateY(80px); bottom: 20px; }
+    .toast.show { transform: translateY(0); }
+
+    .style-preview { padding: 16px; }
   }
 
   @media (min-width: 1600px) {
@@ -1480,6 +1551,317 @@
     0%, 100% { opacity: 0.6; }
     50% { opacity: 1; }
   }
+  /* Dashboard */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .dashboard-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .dashboard-card:hover {
+    border-color: var(--x-blue);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  .dashboard-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .dashboard-card-preview {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .dashboard-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .dashboard-card-status {
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .dashboard-card-status.draft {
+    background: rgba(230, 119, 0, 0.15);
+    color: var(--amber);
+  }
+
+  .dashboard-card-status.interviewing {
+    background: var(--x-blue-dim);
+    color: var(--x-blue);
+  }
+
+  .dashboard-card-status.completed {
+    background: var(--green-dim);
+    color: var(--green);
+  }
+
+  .dashboard-card-delete {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0;
+    transition: all 0.15s;
+  }
+
+  .dashboard-card:hover .dashboard-card-delete {
+    opacity: 1;
+  }
+
+  .dashboard-card-delete:hover {
+    color: var(--red);
+    background: var(--red-dim);
+  }
+
+  .dashboard-empty {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text-dim);
+    grid-column: 1 / -1;
+  }
+
+  .dashboard-empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+  }
+
+  .dashboard-empty-text {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .dashboard-empty-sub {
+    font-size: 14px;
+  }
+
+  .dashboard-styles-section {
+    margin-top: 40px;
+  }
+
+  .dashboard-styles-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .dashboard-styles-header:hover {
+    border-color: var(--x-blue);
+  }
+
+  .style-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .style-card:hover {
+    border-color: var(--x-blue);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  .style-card-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .style-card-meta {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* Auth Overlay */
+  .auth-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+  .auth-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .auth-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--x-blue) 0%, #764ba2 100%);
+  }
+  .auth-ghost-icon {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .auth-ghost-icon img {
+    width: 80px;
+    height: 80px;
+    animation: ghostBob 1.8s ease-in-out infinite;
+  }
+  .auth-title {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+  }
+  .auth-subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 32px;
+  }
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .auth-input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .auth-input-group input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  .auth-input-group input:focus {
+    outline: none;
+    border-color: var(--x-blue);
+    box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.2);
+  }
+  .auth-error {
+    background: var(--red-dim);
+    border: 1px solid rgba(244, 33, 46, 0.3);
+    color: var(--red);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: none;
+  }
+  .auth-error.show { display: block; }
+  .auth-button {
+    padding: 16px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 8px;
+    font-family: inherit;
+    background: var(--x-blue);
+    color: white;
+  }
+  .auth-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+  }
+  .auth-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .auth-toggle {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #eee;
+    font-size: 14px;
+    color: #666;
+  }
+  .auth-toggle-button {
+    background: none;
+    border: none;
+    color: var(--x-blue);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    margin-left: 4px;
+  }
+  .auth-loading { display: none; align-items: center; justify-content: center; gap: 8px; }
+  .auth-loading.show { display: flex; }
+  .auth-spinner-sm { width: 18px; height: 18px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .user-info { display: flex; align-items: center; gap: 12px; }
+  .user-email { font-size: 13px; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .logout-btn { background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px; font-size: 13px; color: var(--text-muted); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .logout-btn:hover { border-color: var(--text-dim); background: var(--surface-hover); }
 </style>
 </head>
 <body>
@@ -1487,7 +1869,7 @@
 
   <header class="app-header">
     <div class="app-header-left">
-      <img src="/static/ghost-icon.png" alt="Ghost Writer" style="width:48px;height:48px;">
+      <img src="/static/ghost-icon.png" alt="Ghost Writer" style="width:48px;height:48px;cursor:pointer;" onclick="showDashboard()">
       <div>
         <h1 class="app-title">Ghost Writer</h1>
         <p class="app-subtitle">リファレンス記事のスタイルを再現して、記事を生成する</p>
@@ -1497,14 +1879,37 @@
       <span class="model-selector-label">Model</span>
       <select class="model-select" id="model-select"></select>
     </div>
+    <div class="user-info" id="user-info" style="display:none;">
+      <span class="user-email" id="user-email"></span>
+      <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
+    </div>
   </header>
 
-  <div class="mode-switcher">
+  <div class="mode-switcher" id="mode-switcher">
     <button class="mode-btn active" id="mode-create" onclick="switchMode('create')">新規作成</button>
     <button class="mode-btn" id="mode-rewrite" onclick="switchMode('rewrite')">リライト</button>
   </div>
 
-  <div id="create-flow">
+  <!-- Dashboard -->
+  <div id="dashboard" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
+      <div>
+        <h2 class="section-title">ダッシュボード</h2>
+        <p class="section-desc">作成した記事とスタイルを管理</p>
+      </div>
+      <button class="btn btn-primary" onclick="startNewArticle()">+ 新規作成</button>
+    </div>
+    <div id="dashboard-articles" class="dashboard-grid"></div>
+    <div class="dashboard-styles-section">
+      <div class="dashboard-styles-header" onclick="toggleDashboardStyles()">
+        <span class="library-header-title">保存済みスタイル</span>
+        <span class="library-header-count" id="dashboard-style-count">0</span>
+      </div>
+      <div id="dashboard-styles" class="dashboard-grid" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <div id="create-flow" style="display:none;">
   <div class="steps">
     <div class="step-indicator active" id="step1-ind">
       <span class="step-number">1</span><span>コンテキスト</span>
@@ -1696,9 +2101,9 @@
 
     <div class="btn-row">
       <button class="btn btn-primary" onclick="copyArticle()">記事をコピー</button>
-      <button class="btn btn-secondary" onclick="saveArticle()">記事を保存</button>
+      <button class="btn btn-secondary" onclick="saveArticleManual()">記事を保存</button>
       <button class="btn btn-ghost" onclick="goToStep(3)">インタビューに戻る</button>
-      <button class="btn btn-ghost" onclick="goToStep(1)">最初からやり直す</button>
+      <button class="btn btn-ghost" onclick="showDashboard()">ダッシュボードに戻る</button>
     </div>
 
   </div>
@@ -1816,7 +2221,7 @@
       <button class="btn btn-primary" onclick="copyRwArticle()">記事をコピー</button>
       <button class="btn btn-secondary" onclick="saveRwArticle()">記事を保存</button>
       <button class="btn btn-ghost" onclick="goToRwStep(2)">インタビューに戻る</button>
-      <button class="btn btn-ghost" onclick="goToRwStep(1)">最初からやり直す</button>
+      <button class="btn btn-ghost" onclick="showDashboard()">ダッシュボードに戻る</button>
     </div>
 
   </div>
@@ -1826,6 +2231,36 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Auth Overlay -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-container">
+    <div class="auth-ghost-icon">
+      <img src="/static/ghost-icon.png" alt="Ghost Writer">
+    </div>
+    <h1 class="auth-title">Ghost Writer</h1>
+    <p class="auth-subtitle">AIライティングアシスタントへようこそ</p>
+    <div class="auth-error" id="auth-error"></div>
+    <form class="auth-form" id="auth-form" onsubmit="handleAuth(event)">
+      <div class="auth-input-group">
+        <label for="auth-email">メールアドレス</label>
+        <input type="email" id="auth-email" placeholder="your@email.com" required>
+      </div>
+      <div class="auth-input-group">
+        <label for="auth-password">パスワード</label>
+        <input type="password" id="auth-password" placeholder="パスワード（6文字以上）" required minlength="6">
+      </div>
+      <button type="submit" class="auth-button" id="auth-submit">
+        <span id="auth-button-text">ログイン</span>
+        <span class="auth-loading" id="auth-loading"><span class="auth-spinner-sm"></span> 処理中...</span>
+      </button>
+    </form>
+    <div class="auth-toggle">
+      <span id="auth-toggle-label">アカウントをお持ちでないですか？</span>
+      <button type="button" class="auth-toggle-button" id="auth-toggle-btn" onclick="toggleAuthMode()">新規登録</button>
+    </div>
+  </div>
+</div>
 
 <!-- Preview Modal -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
@@ -1851,6 +2286,136 @@
 </div>
 
 <script>
+// ── Supabase Auth ──
+const SUPABASE_URL = 'https://ywwhsifnisdafznfrvzc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3d2hzaWZuaXNkYWZ6bmZydnpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMDYwOTUsImV4cCI6MjA4Nzg4MjA5NX0.5wpFNclzh8Z9aYHdYbJ7Zj8_qFmdpJvUs7Ed2IT52NE';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let isRegisterMode = false;
+let _cachedAccessToken = null;
+
+sb.auth.onAuthStateChange((_event, session) => {
+  _cachedAccessToken = session ? session.access_token : null;
+});
+
+async function authFetch(url, options = {}) {
+  if (!_cachedAccessToken) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { showAuthOverlay(); throw new Error("認証が必要です"); }
+    _cachedAccessToken = session.access_token;
+  }
+  const headers = { ...options.headers, "Authorization": "Bearer " + _cachedAccessToken };
+  const fetchOpts = { ...options, headers };
+  let res = await fetch(url, fetchOpts);
+  if (res.status === 401) {
+    const { data: { session: newSession } } = await sb.auth.refreshSession();
+    if (!newSession) { await sb.auth.signOut(); showAuthOverlay(); throw new Error("セッションの有効期限が切れました"); }
+    _cachedAccessToken = newSession.access_token;
+    headers["Authorization"] = "Bearer " + _cachedAccessToken;
+    res = await fetch(url, { ...options, headers });
+  }
+  return res;
+}
+
+function showAuthOverlay() {
+  const o = document.getElementById('auth-overlay');
+  const u = document.getElementById('user-info');
+  if (o) o.classList.remove('hidden');
+  if (u) u.style.display = 'none';
+}
+function hideAuthOverlay() {
+  const o = document.getElementById('auth-overlay');
+  if (o) o.classList.add('hidden');
+}
+function showAuthError(msg) {
+  const e = document.getElementById('auth-error');
+  if (e) { e.textContent = msg; e.classList.add('show'); }
+}
+function hideAuthError() {
+  const e = document.getElementById('auth-error');
+  if (e) e.classList.remove('show');
+}
+function setAuthLoading(on) {
+  const l = document.getElementById('auth-loading');
+  const t = document.getElementById('auth-button-text');
+  const b = document.getElementById('auth-submit');
+  if (on) { if (l) l.classList.add('show'); if (t) t.style.display = 'none'; if (b) b.disabled = true; }
+  else { if (l) l.classList.remove('show'); if (t) t.style.display = 'inline'; if (b) b.disabled = false; }
+}
+function updateUserDisplay(user) {
+  const ui = document.getElementById('user-info');
+  const ue = document.getElementById('user-email');
+  if (user && ui && ue) { ue.textContent = user.email; ui.style.display = 'flex'; }
+  else if (ui) { ui.style.display = 'none'; }
+}
+function toggleAuthMode() {
+  isRegisterMode = !isRegisterMode;
+  const bt = document.getElementById('auth-button-text');
+  const tb = document.getElementById('auth-toggle-btn');
+  const tl = document.getElementById('auth-toggle-label');
+  if (isRegisterMode) {
+    if (bt) bt.textContent = '新規登録';
+    if (tb) tb.textContent = 'ログイン';
+    if (tl) tl.textContent = 'すでにアカウントをお持ちですか？';
+  } else {
+    if (bt) bt.textContent = 'ログイン';
+    if (tb) tb.textContent = '新規登録';
+    if (tl) tl.textContent = 'アカウントをお持ちでないですか？';
+  }
+  hideAuthError();
+}
+async function handleAuth(event) {
+  event.preventDefault();
+  hideAuthError();
+  setAuthLoading(true);
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { showAuthError('メールアドレスとパスワードを入力してください'); setAuthLoading(false); return; }
+  try {
+    let result;
+    if (isRegisterMode) {
+      result = await sb.auth.signUp({ email, password });
+      if (result.error) throw result.error;
+      if (result.data.user && !result.data.session) {
+        showAuthError('確認メールを送信しました。メールボックスをご確認ください。');
+        setAuthLoading(false);
+        return;
+      }
+    } else {
+      result = await sb.auth.signInWithPassword({ email, password });
+      if (result.error) throw result.error;
+    }
+    if (result.data.session) {
+      hideAuthOverlay();
+      hideAuthError();
+      updateUserDisplay(result.data.user);
+      await loadContexts();
+      await loadArticles();
+    }
+  } catch (error) {
+    let msg = '認証エラーが発生しました';
+    if (error.message) {
+      if (error.message.includes('Invalid login credentials')) msg = 'メールアドレスまたはパスワードが正しくありません';
+      else if (error.message.includes('Email not confirmed')) msg = 'メールアドレスが確認されていません';
+      else if (error.message.includes('already registered')) msg = 'このメールアドレスは既に登録されています';
+      else msg = error.message;
+    }
+    showAuthError(msg);
+  } finally { setAuthLoading(false); }
+}
+async function handleLogout() {
+  try {
+    await sb.auth.signOut();
+    state.contexts = [];
+    state.articles = [];
+    renderContextList();
+    renderArticleList();
+    showAuthOverlay();
+    document.getElementById('auth-email').value = '';
+    document.getElementById('auth-password').value = '';
+    if (isRegisterMode) toggleAuthMode();
+  } catch (e) { console.error('Logout error:', e); }
+}
+
 let state = {
   styleGuide: null,
   activeContextId: null,
@@ -1862,6 +2427,7 @@ let state = {
   articles: [],
   model: null,
   sources: [],
+  currentArticleId: null,
 };
 
 function getSelectedModel() {
@@ -1971,7 +2537,7 @@ function setRefValues(refs) {
 
 async function loadContexts() {
   try {
-    const res = await fetch("/api/contexts");
+    const res = await authFetch("/api/contexts");
     const data = await res.json();
     state.contexts = data.contexts || [];
     renderContextList();
@@ -2052,7 +2618,7 @@ async function deleteContext(id) {
   if (!confirm(`「${ctx.name}」を削除しますか？`)) return;
 
   try {
-    await fetch(`/api/contexts/${id}`, { method: "DELETE" });
+    await authFetch(`/api/contexts/${id}`, { method: "DELETE" });
     if (state.activeContextId === id) {
       state.activeContextId = null;
       state.styleGuide = null;
@@ -2088,13 +2654,13 @@ async function saveAndAnalyze() {
     state.styleGuide = styleGuide;
 
     if (state.activeContextId) {
-      await fetch(`/api/contexts/${state.activeContextId}`, {
+      await authFetch(`/api/contexts/${state.activeContextId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, references: allRefs, style_guide: styleGuide }),
       });
     } else {
-      const res = await fetch("/api/contexts", {
+      const res = await authFetch("/api/contexts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, references: allRefs, style_guide: styleGuide }),
@@ -2140,7 +2706,7 @@ async function analyzeOnly() {
 // ── API Calls ──
 
 async function analyzeStyleAPI(refs) {
-  const res = await fetch("/api/analyze-style", {
+  const res = await authFetch("/api/analyze-style", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ references: refs, model: getSelectedModel() }),
@@ -2180,11 +2746,25 @@ async function startInterview() {
   document.getElementById("chat-area").innerHTML = "";
   goToStep(3);
 
+  // Auto-save as draft if new, or update to interviewing
+  if (!state.currentArticleId) {
+    try {
+      const res = await authFetch("/api/articles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: state.title, memo: state.memo, conversation: [], context_id: state.activeContextId }),
+      });
+      const data = await res.json();
+      if (data.article) state.currentArticleId = data.article.id;
+    } catch (e) { console.error("Auto-save on interview start failed:", e); }
+  }
+  await autoSaveArticle("interviewing");
+
   const chatArea = document.getElementById("chat-area");
   showLoading(chatArea, "質問を考えています...");
 
   try {
-    const res = await fetch("/api/interview/start", {
+    const res = await authFetch("/api/interview/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ style_guide: state.styleGuide, title: state.title, memo: state.memo, sources: state.sources, model: getSelectedModel() }),
@@ -2221,7 +2801,7 @@ async function sendReply() {
   showLoading(chatArea, "考えています...");
 
   try {
-    const res = await fetch("/api/interview/continue", {
+    const res = await authFetch("/api/interview/continue", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2237,6 +2817,7 @@ async function sendReply() {
     removeLoading();
     addChatBubble("ai", data.message);
     state.conversation.push({ role: "assistant", content: data.message });
+    autoSaveArticle("interviewing");
     if (data.ready_to_write) await generateArticle();
   } catch (e) {
     removeLoading();
@@ -2257,7 +2838,7 @@ async function generateArticle() {
   showLoading(output, "執筆中...", true);
 
   try {
-    const res = await fetch("/api/generate-article", {
+    const res = await authFetch("/api/generate-article", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2273,6 +2854,8 @@ async function generateArticle() {
     removeLoading();
     state.articleHtml = data.article;
     output.innerHTML = data.article;
+    // Auto-save as completed
+    autoSaveArticle("completed");
   } catch (e) {
     removeLoading();
     showToast("エラー: " + e.message);
@@ -2320,14 +2903,22 @@ async function fetchUrl(n) {
   const btn = urlInput.nextElementSibling;
   const origText = btn.textContent;
   btn.disabled = true;
-  btn.textContent = "取得中...";
+  btn.textContent = "認証確認中...";
 
   try {
-    const res = await fetch("/api/fetch-url", {
+    btn.textContent = "サーバーに送信中...";
+    const res = await authFetch("/api/fetch-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
     });
+    btn.textContent = "応答処理中...";
+    if (!res.ok) {
+      const errText = await res.text();
+      let errMsg = `サーバーエラー (${res.status})`;
+      try { const errJson = JSON.parse(errText); errMsg = errJson.error || errJson.message || errMsg; } catch {}
+      throw new Error(errMsg);
+    }
     const data = await res.json();
 
     msgEl.style.display = "block";
@@ -2347,7 +2938,8 @@ async function fetchUrl(n) {
     }
   } catch (e) {
     msgEl.style.display = "block";
-    msgEl.textContent = "取得に失敗しました: " + e.message;
+    const msg = e.name === 'AbortError' ? 'タイムアウト: サーバーが応答しませんでした。もう一度お試しください。' : '取得に失敗しました: ' + e.message;
+    msgEl.textContent = msg;
   } finally {
     btn.disabled = false;
     btn.textContent = origText;
@@ -2364,7 +2956,7 @@ function toggleLibSection(section) {
 
 async function loadArticles() {
   try {
-    const res = await fetch("/api/articles");
+    const res = await authFetch("/api/articles");
     const data = await res.json();
     state.articles = data.articles || [];
     renderArticleList();
@@ -2403,27 +2995,31 @@ function renderArticleList() {
   }).join("");
 }
 
-async function saveArticle() {
+async function saveArticleManual() {
   const output = document.getElementById("article-output");
   const html = output.innerHTML;
   const text = output.innerText;
   const title = state.title || "無題";
 
   try {
-    const res = await fetch("/api/articles", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        html,
-        text,
-        memo: state.memo,
-        conversation: state.conversation,
-        context_id: state.activeContextId,
-      }),
-    });
-    const data = await res.json();
-    if (data.error) { showToast(data.error); return; }
+    if (state.currentArticleId) {
+      const res = await authFetch(`/api/articles/${state.currentArticleId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, html, text, memo: state.memo, conversation: state.conversation, context_id: state.activeContextId, status: "completed" }),
+      });
+      const data = await res.json();
+      if (data.error) { showToast(data.error); return; }
+    } else {
+      const res = await authFetch("/api/articles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, html, text, memo: state.memo, conversation: state.conversation, context_id: state.activeContextId }),
+      });
+      const data = await res.json();
+      if (data.error) { showToast(data.error); return; }
+      state.currentArticleId = data.article.id;
+    }
     await loadArticles();
     showToast(`「${title}」を保存しました`);
   } catch (e) {
@@ -2437,8 +3033,10 @@ async function deleteArticle(id) {
   if (!confirm(`「${art.title}」を削除しますか？`)) return;
 
   try {
-    await fetch(`/api/articles/${id}`, { method: "DELETE" });
+    await authFetch(`/api/articles/${id}`, { method: "DELETE" });
+    if (state.currentArticleId === id) state.currentArticleId = null;
     await loadArticles();
+    renderDashboard();
     showToast("削除しました");
   } catch (e) {
     showToast("削除に失敗しました");
@@ -2591,7 +3189,7 @@ async function addSourceUrl() {
     const formData = new FormData();
     formData.append("url", url);
 
-    const res = await fetch("/api/extract-source", { method: "POST", body: formData });
+    const res = await authFetch("/api/extract-source", { method: "POST", body: formData });
     const data = await res.json();
 
     if (data.error) { showToast(data.error); return; }
@@ -2624,7 +3222,7 @@ async function addSourcePdf(event) {
   showToast("PDFを読み込み中...");
 
   try {
-    const res = await fetch("/api/extract-source", { method: "POST", body: formData });
+    const res = await authFetch("/api/extract-source", { method: "POST", body: formData });
     const data = await res.json();
 
     if (data.error) { showToast(data.error); return; }
@@ -2746,12 +3344,201 @@ function previewStyle(id) {
   openModal(`${ctx.name}（${subtitle}）`, bodyHtml, footerHtml);
 }
 
+// ── Dashboard ──
+
+function renderDashboard() {
+  const articlesContainer = document.getElementById('dashboard-articles');
+  const stylesContainer = document.getElementById('dashboard-styles');
+  const styleCountEl = document.getElementById('dashboard-style-count');
+
+  if (!state.articles || state.articles.length === 0) {
+    articlesContainer.innerHTML = `
+      <div class="dashboard-empty">
+        <div class="dashboard-empty-icon"><img src="/static/ghost-icon.png" style="width:64px;height:64px;opacity:0.3;"></div>
+        <div class="dashboard-empty-text">まだ記事がありません</div>
+        <div class="dashboard-empty-sub">「+ 新規作成」から始めましょう！</div>
+      </div>
+    `;
+  } else {
+    articlesContainer.innerHTML = state.articles.map(art => {
+      const preview = (art.text || "").substring(0, 100).replace(/\n/g, ' ');
+      const charCount = (art.text || "").length;
+      const createdDate = new Date(art.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' });
+      const statusClass = art.status || 'draft';
+      const statusLabel = { 'draft': '下書き', 'interviewing': '取材中', 'completed': '完成' }[statusClass] || '下書き';
+
+      return `
+        <div class="dashboard-card" onclick="resumeArticle('${art.id}')">
+          <button class="dashboard-card-delete" onclick="event.stopPropagation(); deleteArticle('${art.id}')" title="削除">&times;</button>
+          <div class="dashboard-card-title">${escapeHtml(art.title || '無題')}</div>
+          <div class="dashboard-card-preview">${escapeHtml(preview || '（内容なし）')}</div>
+          <div class="dashboard-card-meta">
+            <span class="dashboard-card-status ${statusClass}">${statusLabel}</span>
+            <span>${createdDate}</span>
+            <span>${charCount.toLocaleString()}文字</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  styleCountEl.textContent = state.contexts.length;
+  if (state.contexts.length === 0) {
+    stylesContainer.innerHTML = '<div class="dashboard-empty"><div class="dashboard-empty-sub">新規作成時にスタイルを保存できます</div></div>';
+  } else {
+    stylesContainer.innerHTML = state.contexts.map(ctx => {
+      const refs = (ctx.references || []).filter(r => r && r.trim());
+      const hasStyle = ctx.style_guide ? "分析済" : "未分析";
+      return `
+        <div class="style-card" onclick="startWithStyle('${ctx.id}')">
+          <div class="style-card-name">${escapeHtml(ctx.name)}</div>
+          <div class="style-card-meta">${refs.length}件 / ${hasStyle}</div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function toggleDashboardStyles() {
+  const el = document.getElementById('dashboard-styles');
+  el.style.display = el.style.display === 'none' ? 'grid' : 'none';
+}
+
+function showDashboard() {
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('create-flow').style.display = 'none';
+  document.getElementById('rewrite-flow').style.display = 'none';
+  document.getElementById('mode-switcher').style.display = 'none';
+  renderDashboard();
+}
+
+function goToCreationFlow() {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('create-flow').style.display = 'block';
+  document.getElementById('rewrite-flow').style.display = 'none';
+  document.getElementById('mode-switcher').style.display = 'flex';
+  document.getElementById('mode-create').classList.add('active');
+  document.getElementById('mode-rewrite').classList.remove('active');
+}
+
+function startNewArticle() {
+  state.currentArticleId = null;
+  state.styleGuide = null;
+  state.activeContextId = null;
+  state.title = "";
+  state.memo = "";
+  state.conversation = [];
+  state.articleHtml = "";
+  state.sources = [];
+
+  document.getElementById('article-title').value = '';
+  document.getElementById('article-memo').value = '';
+  document.getElementById('chat-area').innerHTML = '';
+  document.getElementById('article-output').innerHTML = '';
+  setRefValues([]);
+  document.getElementById('ctx-name').value = '';
+
+  goToCreationFlow();
+  goToStep(1);
+}
+
+function startWithStyle(contextId) {
+  const ctx = state.contexts.find(c => c.id === contextId);
+  if (!ctx) return;
+
+  startNewArticle();
+  state.activeContextId = contextId;
+  state.styleGuide = ctx.style_guide;
+  setRefValues(ctx.references);
+  document.getElementById('ctx-name').value = ctx.name;
+  renderContextList();
+
+  if (ctx.style_guide) {
+    renderStylePreview(ctx.style_guide);
+    goToStep(2);
+    showToast(`「${ctx.name}」のスタイルで作成を開始します`);
+  } else {
+    showToast(`「${ctx.name}」を読み込みました。スタイル分析を実行してください。`);
+  }
+}
+
+async function resumeArticle(id) {
+  const art = state.articles.find(a => a.id === id);
+  if (!art) return;
+
+  state.currentArticleId = id;
+  state.title = art.title || "";
+  state.memo = art.memo || "";
+  state.conversation = art.conversation || [];
+  state.articleHtml = art.html || "";
+  state.activeContextId = art.context_id || null;
+  state.styleGuide = null;
+
+  if (art.context_id) {
+    const ctx = state.contexts.find(c => c.id === art.context_id);
+    if (ctx) {
+      state.styleGuide = ctx.style_guide;
+      renderStylePreview(ctx.style_guide);
+    }
+  }
+
+  document.getElementById('article-title').value = state.title;
+  document.getElementById('article-memo').value = state.memo;
+
+  goToCreationFlow();
+  renderContextList();
+
+  const status = art.status || 'draft';
+  if (status === 'completed' && art.html) {
+    goToStep(4);
+    document.getElementById('article-output').innerHTML = art.html;
+  } else if (status === 'interviewing' && state.conversation.length > 0) {
+    goToStep(3);
+    const chatArea = document.getElementById('chat-area');
+    chatArea.innerHTML = '';
+    state.conversation.forEach(msg => {
+      const role = msg.role === 'assistant' ? 'ai' : 'user';
+      addChatBubble(role, msg.content);
+    });
+  } else if (state.styleGuide) {
+    goToStep(2);
+  } else {
+    goToStep(1);
+  }
+
+  showToast(`「${art.title}」を復元しました`);
+}
+
+async function autoSaveArticle(status) {
+  if (!state.currentArticleId) return;
+  const title = state.title || document.getElementById('article-title').value.trim();
+  if (!title) return;
+  try {
+    await authFetch(`/api/articles/${state.currentArticleId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        memo: state.memo || document.getElementById('article-memo').value,
+        conversation: state.conversation,
+        html: state.articleHtml,
+        text: state.articleHtml ? document.getElementById('article-output')?.innerText || '' : '',
+        context_id: state.activeContextId,
+        status,
+      }),
+    });
+  } catch (e) {
+    console.error("Auto-save failed:", e);
+  }
+}
+
 // ── Mode Switching ──
 
 let currentMode = "create";
 
 function switchMode(mode) {
   currentMode = mode;
+  document.getElementById("dashboard").style.display = "none";
   document.getElementById("mode-create").classList.toggle("active", mode === "create");
   document.getElementById("mode-rewrite").classList.toggle("active", mode === "rewrite");
   document.getElementById("create-flow").style.display = mode === "create" ? "block" : "none";
@@ -2859,7 +3646,7 @@ async function fetchRewriteUrl() {
   try {
     const formData = new FormData();
     formData.append("url", url);
-    const res = await fetch("/api/extract-source", { method: "POST", body: formData });
+    const res = await authFetch("/api/extract-source", { method: "POST", body: formData });
     const data = await res.json();
 
     if (data.error) { showToast(data.error); return; }
@@ -2903,7 +3690,7 @@ async function startRewriteInterview() {
   showLoading(chatArea, "元記事を分析して質問を考えています...");
 
   try {
-    const res = await fetch("/api/rewrite/start", {
+    const res = await authFetch("/api/rewrite/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2954,7 +3741,7 @@ async function sendRwReply() {
   showLoading(chatArea, "考えています...");
 
   try {
-    const res = await fetch("/api/rewrite/continue", {
+    const res = await authFetch("/api/rewrite/continue", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2989,7 +3776,7 @@ async function generateRwArticle() {
   showLoading(output, "執筆中...", true);
 
   try {
-    const res = await fetch("/api/rewrite/generate", {
+    const res = await authFetch("/api/rewrite/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3040,7 +3827,7 @@ async function saveRwArticle() {
   const title = rwState.originalTitle || "リライト記事";
 
   try {
-    const res = await fetch("/api/articles", {
+    const res = await authFetch("/api/articles", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3146,13 +3933,14 @@ async function submitEditSelection(mode) {
 
   if (!instruction || !editSelectedText) return;
 
+  inputEl.value = "";
   popoverEl.classList.remove("show");
-  showLoading("修正中…");
+  showLoading(outputEl, "修正中…");
 
   const sg = mode === "modal" ? {} : (mode === "create" ? state.styleGuide : rwState.styleGuide);
 
   try {
-    const res = await fetch("/api/article/edit-selection", {
+    const res = await authFetch("/api/article/edit-selection", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
@@ -3164,12 +3952,12 @@ async function submitEditSelection(mode) {
       }),
     });
     const data = await res.json();
-    hideLoading();
+    removeLoading();
     if (data.error) { showToast(data.error); return; }
     outputEl.innerHTML = data.article;
     showToast("修正を反映しました");
   } catch (e) {
-    hideLoading();
+    removeLoading();
     showToast("修正に失敗しました");
   }
 }
@@ -3187,12 +3975,13 @@ async function submitEditFull(mode) {
 
   if (!instruction) return;
 
-  showLoading("修正中…");
+  inputEl.value = "";
+  showLoading(outputEl, "修正中…");
 
   const sg = mode === "modal" ? {} : (mode === "create" ? state.styleGuide : rwState.styleGuide);
 
   try {
-    const res = await fetch("/api/article/edit-full", {
+    const res = await authFetch("/api/article/edit-full", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
@@ -3203,13 +3992,12 @@ async function submitEditFull(mode) {
       }),
     });
     const data = await res.json();
-    hideLoading();
+    removeLoading();
     if (data.error) { showToast(data.error); return; }
     outputEl.innerHTML = data.article;
-    inputEl.value = "";
     showToast("修正を反映しました");
   } catch (e) {
-    hideLoading();
+    removeLoading();
     showToast("修正に失敗しました");
   }
 }
@@ -3283,7 +4071,7 @@ async function overwriteArticle() {
   if (!contentEl) return;
 
   try {
-    const res = await fetch(`/api/articles/${modalEditingArticleId}`, {
+    const res = await authFetch(`/api/articles/${modalEditingArticleId}`, {
       method: "PUT",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
@@ -3310,7 +4098,7 @@ async function saveAsNewArticle() {
   if (!title) return;
 
   try {
-    const res = await fetch("/api/articles", {
+    const res = await authFetch("/api/articles", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
@@ -3332,10 +4120,40 @@ async function saveAsNewArticle() {
 }
 
 // ── Init ──
-loadModels();
-loadContexts();
-loadArticles();
-renderSources();
+(async function init() {
+  await loadModels();
+  renderSources();
+  let _initDone = false;
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session && !_initDone) {
+      _initDone = true;
+      hideAuthOverlay();
+      updateUserDisplay(session.user);
+      await loadContexts();
+      await loadArticles();
+      showDashboard();
+    } else if (event === 'TOKEN_REFRESHED' && session) {
+      updateUserDisplay(session.user);
+    } else if (event === 'SIGNED_OUT') {
+      _initDone = false;
+      showAuthOverlay();
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('create-flow').style.display = 'none';
+      document.getElementById('rewrite-flow').style.display = 'none';
+    }
+  });
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    _initDone = true;
+    hideAuthOverlay();
+    updateUserDisplay(session.user);
+    await loadContexts();
+    await loadArticles();
+    showDashboard();
+  } else {
+    showAuthOverlay();
+  }
+})();
 </script>
 </body>
 </html>
