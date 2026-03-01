@@ -8,6 +8,7 @@ load_dotenv()
 
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY", "")
 RAPIDAPI_HOST = "twitter241.p.rapidapi.com"
+SUPADATA_API_KEY = os.getenv("SUPADATA_API_KEY", "")
 
 _yt_api = YouTubeTranscriptApi()
 
@@ -165,12 +166,50 @@ def extract_youtube_video_id(url):
     return None
 
 
+def fetch_youtube_transcript_supadata(url, video_id):
+    """Supadata APIを使ってYouTube動画の字幕を取得する"""
+    resp = requests.get(
+        "https://api.supadata.ai/v1/transcript",
+        params={"url": url},
+        headers={"x-api-key": SUPADATA_API_KEY},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    content = data.get("content", [])
+    if not content:
+        raise ValueError("字幕が見つかりませんでした")
+
+    text = " ".join(item.get("text", "") for item in content)
+    text = re.sub(r"\s+", " ", text).strip()
+
+    title = _get_youtube_title(video_id)
+
+    return {
+        "text": text,
+        "meta": {
+            "article_title": title,
+            "display_name": "",
+            "username": "",
+            "author": "",
+            "source_type": "youtube",
+            "video_id": video_id,
+        },
+    }
+
+
 def fetch_youtube_transcript(url):
     """YouTube動画の字幕を取得してテキストとメタ情報を返す"""
     video_id = extract_youtube_video_id(url)
     if not video_id:
         raise ValueError(f"YouTube動画IDを抽出できません: {url}")
 
+    # SUPADATA_API_KEYが設定されている場合はSupadata APIを使用
+    if SUPADATA_API_KEY:
+        return fetch_youtube_transcript_supadata(url, video_id)
+
+    # SUPADATA_API_KEY未設定時はyoutube_transcript_apiを使用
     try:
         transcript = _yt_api.fetch(video_id, languages=["ja", "en"])
     except Exception:
