@@ -5,3 +5,4 @@ flask-cors
 beautifulsoup4
 requests
 PyMuPDF
+youtube-transcript-api

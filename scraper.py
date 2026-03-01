@@ -2,11 +2,14 @@ import os
 import re
 import requests
 from dotenv import load_dotenv
+from youtube_transcript_api import YouTubeTranscriptApi
 
 load_dotenv()
 
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY", "")
 RAPIDAPI_HOST = "twitter241.p.rapidapi.com"
+
+_yt_api = YouTubeTranscriptApi()
 
 
 def extract_tweet_id(url):
@@ -143,6 +146,72 @@ def fetch_x_content(url):
     return extract_from_api_response(data)
 
 
+def is_youtube_url(url):
+    """YouTube URLかどうか判定する"""
+    return bool(re.match(
+        r"https?://(?:www\.)?(?:youtube\.com|youtu\.be)/", url
+    ))
+
+
+def extract_youtube_video_id(url):
+    """YouTube URLから動画IDを抽出する"""
+    patterns = [
+        r"(?:youtube\.com/watch\?.*v=|youtu\.be/|youtube\.com/embed/|youtube\.com/v/|youtube\.com/shorts/)([a-zA-Z0-9_-]{11})",
+    ]
+    for pattern in patterns:
+        m = re.search(pattern, url)
+        if m:
+            return m.group(1)
+    return None
+
+
+def fetch_youtube_transcript(url):
+    """YouTube動画の字幕を取得してテキストとメタ情報を返す"""
+    video_id = extract_youtube_video_id(url)
+    if not video_id:
+        raise ValueError(f"YouTube動画IDを抽出できません: {url}")
+
+    try:
+        transcript = _yt_api.fetch(video_id, languages=["ja", "en"])
+    except Exception:
+        try:
+            transcript = _yt_api.fetch(video_id)
+        except Exception as e:
+            raise ValueError(f"字幕を取得できませんでした（字幕が無効な動画の可能性があります）: {e}")
+
+    text = " ".join(snippet.text for snippet in transcript)
+    text = re.sub(r"\s+", " ", text).strip()
+
+    title = _get_youtube_title(video_id)
+
+    return {
+        "text": text,
+        "meta": {
+            "article_title": title,
+            "display_name": "",
+            "username": "",
+            "author": "",
+            "source_type": "youtube",
+            "video_id": video_id,
+        },
+    }
+
+
+def _get_youtube_title(video_id):
+    """YouTube動画のタイトルをoEmbed APIで取得する"""
+    try:
+        resp = requests.get(
+            "https://www.youtube.com/oembed",
+            params={"url": f"https://www.youtube.com/watch?v={video_id}", "format": "json"},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("title", "")
+    except Exception:
+        return ""
+
+
 def fetch_sync(url):
     """同期ラッパー。テキストとメタ情報を返す"""
     is_x = bool(re.match(r"https?://(?:x\.com|twitter\.com)/", url))
@@ -150,8 +219,11 @@ def fetch_sync(url):
     if is_x and RAPIDAPI_KEY:
         return fetch_x_content(url)
 
+    if is_youtube_url(url):
+        return fetch_youtube_transcript(url)
+
     raise ValueError(
-        "X/TwitterのURLのみ対応しています。RapidAPIキーが.envに設定されていることを確認してください。"
+        "X/TwitterまたはYouTubeのURLのみ対応しています。"
     )
 
 

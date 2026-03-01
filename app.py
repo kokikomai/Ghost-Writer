@@ -10,7 +10,7 @@ import anthropic
 import requests as http_requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from scraper import fetch_sync
+from scraper import fetch_sync, is_youtube_url
 
 load_dotenv()
 
@@ -707,6 +707,20 @@ def _extract_url(url):
             })
         except Exception as e:
             return jsonify({"error": f"X記事の取得に失敗: {str(e)}"}), 500
+
+    if is_youtube_url(url):
+        try:
+            result = fetch_sync(url)
+            text = result.get("text", "")
+            meta = result.get("meta", {})
+            title = meta.get("article_title", "") or url
+            return jsonify({
+                "text": text[:30000],
+                "title": title,
+                "message": f"YouTube字幕を取得しました（{len(text)}文字）",
+            })
+        except Exception as e:
+            return jsonify({"error": f"YouTube字幕の取得に失敗: {str(e)}"}), 500
 
     try:
         headers = {
