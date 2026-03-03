@@ -325,6 +325,26 @@
     margin-bottom: 4px;
     font-size: 13px;
   }
+  .library-cta-add {
+    padding: 8px 12px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .cta-insert-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .cta-insert-bar select {
+    min-width: 180px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+  }
 
   /* Library items */
   .lib-item {
@@ -887,6 +907,12 @@
   .shortcut-row { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 15px; }
   .shortcut-row:last-child { border-bottom: none; }
   .shortcut-row kbd { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 13px; font-family: inherit; }
+
+  .cta-modal-form { display: flex; flex-direction: column; gap: 12px; }
+  .cta-modal-label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+  .cta-modal-input, .cta-modal-textarea { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 14px; width: 100%; box-sizing: border-box; }
+  .cta-modal-textarea { min-height: 120px; resize: vertical; font-family: inherit; }
+  .cta-modal-hint { font-size: 12px; color: var(--text-dim); margin: 0; }
 
   /* Article output - X article style */
   .article-output {
@@ -1685,6 +1711,19 @@
           </div>
         </div>
 
+        <div class="library-section">
+          <div class="library-header" onclick="toggleLibSection('cta')">
+            <span class="library-header-title">CTA</span>
+            <span class="library-header-count" id="cta-count">0</span>
+          </div>
+          <div class="library-list" id="lib-cta">
+            <div class="library-empty"><div class="library-empty-title">CTAがまだありません</div>採用・サービス案内などの定型文を登録して記事に挿入できます。</div>
+          </div>
+          <div class="library-cta-add">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openCtaModal()">＋ CTAを追加</button>
+          </div>
+        </div>
+
       </div>
 
       <!-- Right: Ref cards -->
@@ -1830,6 +1869,13 @@
       <input type="text" id="edit-full-input" placeholder="記事全体への修正指示を入力…" onkeydown="handleEditFullKey(event, 'create')">
       <button class="btn btn-primary" onclick="submitEditFull('create')">修正</button>
     </div>
+    <div class="cta-insert-bar">
+      <span class="model-selector-label">CTAを挿入:</span>
+      <select id="cta-insert-select-create">
+        <option value="">-- 選択 --</option>
+      </select>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="insertCtaIntoArticle('create')">記事の末尾に挿入</button>
+    </div>
 
     <div style="position:relative;">
       <div class="article-output" id="article-output"></div>
@@ -1951,6 +1997,13 @@
     <div class="edit-full-bar">
       <input type="text" id="rw-edit-full-input" placeholder="記事全体への修正指示を入力…" onkeydown="handleEditFullKey(event, 'rewrite')">
       <button class="btn btn-primary" onclick="submitEditFull('rewrite')">修正</button>
+    </div>
+    <div class="cta-insert-bar">
+      <span class="model-selector-label">CTAを挿入:</span>
+      <select id="cta-insert-select-rewrite">
+        <option value="">-- 選択 --</option>
+      </select>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="insertCtaIntoArticle('rewrite')">記事の末尾に挿入</button>
     </div>
 
     <div style="position:relative;">
@@ -2323,6 +2376,132 @@ async function saveAsPromptTemplate() {
   } catch (e) {
     showToast("保存に失敗しました", "error");
   }
+}
+
+// ── CTA Templates ──
+let ctaTemplates = [];
+let ctaEditId = null;
+
+async function loadCtaTemplates() {
+  try {
+    const res = await fetch("/api/cta-templates");
+    const data = await res.json();
+    ctaTemplates = data.templates || [];
+    renderCtaList();
+    refreshCtaSelects();
+  } catch (e) {
+    console.error("Failed to load CTA templates", e);
+  }
+}
+
+function refreshCtaSelects() {
+  const opts = '<option value="">-- 選択 --</option>' + (ctaTemplates || []).map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("");
+  const selCreate = document.getElementById("cta-insert-select-create");
+  const selRewrite = document.getElementById("cta-insert-select-rewrite");
+  if (selCreate) { const v = selCreate.value; selCreate.innerHTML = opts; if (v && ctaTemplates.some(t => t.id === v)) selCreate.value = v; }
+  if (selRewrite) { const v = selRewrite.value; selRewrite.innerHTML = opts; if (v && ctaTemplates.some(t => t.id === v)) selRewrite.value = v; }
+}
+
+function renderCtaList() {
+  const list = document.getElementById("lib-cta");
+  const countEl = document.getElementById("cta-count");
+  if (!list) return;
+  if (countEl) countEl.textContent = ctaTemplates.length;
+  if (ctaTemplates.length === 0) {
+    list.innerHTML = '<div class="library-empty"><div class="library-empty-title">CTAがまだありません</div>採用・サービス案内などの定型文を登録して記事に挿入できます。「＋ CTAを追加」から登録してください。</div>';
+    return;
+  }
+  list.innerHTML = ctaTemplates.map(t => `
+    <div class="lib-item lib-item-cta">
+      <div class="lib-item-info" style="flex:1; min-width:0;">
+        <div class="lib-item-name">${escapeHtml(t.name)}</div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openCtaModal('${t.id}')" title="編集">編集</button>
+      <button class="lib-item-delete" onclick="event.stopPropagation(); deleteCtaTemplate('${t.id}')" title="削除">&times;</button>
+    </div>
+  `).join("");
+}
+
+function openCtaModal(editId = null) {
+  ctaEditId = editId || null;
+  const t = editId ? ctaTemplates.find(x => x.id === editId) : null;
+  const title = t ? "CTAを編集" : "CTAを追加";
+  const body = `
+    <div class="cta-modal-form">
+      <label class="cta-modal-label">名前（一覧用）</label>
+      <input type="text" id="cta-modal-name" class="cta-modal-input" placeholder="例: 採用案内" value="${t ? escapeHtml(t.name) : ""}">
+      <label class="cta-modal-label">内容（テキストまたはHTML）</label>
+      <textarea id="cta-modal-content" class="cta-modal-textarea" placeholder="例: 私たちは一緒に働く仲間を募集しています。詳細はこちら →" rows="5">${t ? escapeHtml(t.content || "") : ""}</textarea>
+      <p class="cta-modal-hint">記事の末尾にそのまま挿入されます。&lt;p&gt;や&lt;a&gt;などHTMLタグも使えます。</p>
+    </div>
+  `;
+  const footer = `<button type="button" class="btn btn-secondary" onclick="closeModal()">キャンセル</button><button type="button" class="btn btn-primary" onclick="saveCtaFromModal()">保存</button>`;
+  openModal(title, body, footer, false);
+  setTimeout(() => {
+    const nameEl = document.getElementById("cta-modal-name");
+    if (nameEl) nameEl.focus();
+  }, 100);
+}
+
+async function saveCtaFromModal() {
+  const name = (document.getElementById("cta-modal-name") && document.getElementById("cta-modal-name").value || "").trim();
+  const content = document.getElementById("cta-modal-content") ? document.getElementById("cta-modal-content").value : "";
+  if (!name) { showToast("名前を入力してください", "error"); return; }
+  try {
+    if (ctaEditId) {
+      const res = await fetch("/api/cta-templates/" + ctaEditId, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, content }),
+      });
+      const data = await res.json();
+      if (data.error) { showToast(data.error, "error"); return; }
+      showToast("CTAを更新しました", "success");
+    } else {
+      const res = await fetch("/api/cta-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, content }),
+      });
+      const data = await res.json();
+      if (data.error) { showToast(data.error, "error"); return; }
+      showToast("CTAを追加しました", "success");
+    }
+    closeModal();
+    ctaEditId = null;
+    await loadCtaTemplates();
+  } catch (e) {
+    showToast("保存に失敗しました", "error");
+  }
+}
+
+async function deleteCtaTemplate(id) {
+  if (!confirm("このCTAを削除しますか？")) return;
+  try {
+    await fetch("/api/cta-templates/" + id, { method: "DELETE" });
+    await loadCtaTemplates();
+    showToast("CTAを削除しました", "success");
+  } catch (e) {
+    showToast("削除に失敗しました", "error");
+  }
+}
+
+function insertCtaIntoArticle(mode) {
+  const selectId = mode === "create" ? "cta-insert-select-create" : "cta-insert-select-rewrite";
+  const outputId = mode === "create" ? "article-output" : "rw-article-output";
+  const countId = mode === "create" ? "article-char-count" : "rw-article-char-count";
+  const sel = document.getElementById(selectId);
+  const output = document.getElementById(outputId);
+  if (!sel || !output) return;
+  const id = sel.value;
+  if (!id) { showToast("CTAを選択してください", "info"); return; }
+  const t = ctaTemplates.find(x => x.id === id);
+  if (!t || !t.content) { showToast("CTAの内容がありません", "error"); return; }
+  let html = (t.content || "").trim();
+  if (html && !/<\/?[a-z][\s\S]*>/i.test(html)) html = "<p>" + escapeHtml(html).replace(/\n/g, "<br>") + "</p>";
+  output.insertAdjacentHTML("beforeend", html);
+  updateArticleCharCount(outputId, countId);
+  showToast("CTAを記事の末尾に挿入しました", "success");
 }
 
 function renderSessionList() {
@@ -2878,7 +3057,7 @@ async function fetchUrl(n) {
 }
 
 function toggleLibSection(section) {
-  const idMap = { styles: 'lib-styles', articles: 'lib-articles', sessions: 'lib-sessions' };
+  const idMap = { styles: 'lib-styles', articles: 'lib-articles', sessions: 'lib-sessions', cta: 'lib-cta' };
   const id = idMap[section] || section;
   const el = document.getElementById(id);
   if (el) el.style.display = el.style.display === 'none' ? 'flex' : 'none';
@@ -4059,6 +4238,7 @@ loadContexts();
 loadArticles();
 loadSessions();
 loadPromptTemplates();
+loadCtaTemplates();
 renderSources();
 </script>
 </body>

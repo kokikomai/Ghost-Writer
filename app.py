@@ -33,6 +33,7 @@ CONTEXTS_FILE = os.path.join(DATA_DIR, "contexts.json")
 ARTICLES_FILE = os.path.join(DATA_DIR, "articles.json")
 SESSIONS_FILE = os.path.join(DATA_DIR, "sessions.json")
 PROMPT_TEMPLATES_FILE = os.path.join(DATA_DIR, "prompt_templates.json")
+CTA_TEMPLATES_FILE = os.path.join(DATA_DIR, "cta_templates.json")
 
 
 def load_json(path):
@@ -77,6 +78,14 @@ def load_prompt_templates():
 
 def save_prompt_templates(templates):
     save_json(PROMPT_TEMPLATES_FILE, templates)
+
+
+def load_cta_templates():
+    return load_json(CTA_TEMPLATES_FILE)
+
+
+def save_cta_templates(templates):
+    save_json(CTA_TEMPLATES_FILE, templates)
 
 
 def call_claude(system_prompt, user_prompt, *, json_mode=False, model=None):
@@ -1113,6 +1122,54 @@ def delete_prompt_template(template_id):
     templates = load_prompt_templates()
     templates = [t for t in templates if t["id"] != template_id]
     save_prompt_templates(templates)
+    return jsonify({"success": True})
+
+
+@app.route("/api/cta-templates", methods=["GET"])
+def list_cta_templates():
+    templates = load_cta_templates()
+    return jsonify({"templates": templates})
+
+
+@app.route("/api/cta-templates", methods=["POST"])
+def create_cta_template():
+    data = request.json or {}
+    name = (data.get("name") or "").strip()
+    content = data.get("content", "")
+    if not name:
+        return jsonify({"error": "CTA名を入力してください"}), 400
+    template = {
+        "id": str(uuid.uuid4()),
+        "name": name,
+        "content": content,
+        "created_at": datetime.now().isoformat(),
+    }
+    templates = load_cta_templates()
+    templates.insert(0, template)
+    save_cta_templates(templates)
+    return jsonify({"template": template})
+
+
+@app.route("/api/cta-templates/<template_id>", methods=["PUT"])
+def update_cta_template(template_id):
+    data = request.json or {}
+    templates = load_cta_templates()
+    for t in templates:
+        if t["id"] == template_id:
+            if "name" in data:
+                t["name"] = (data["name"] or "").strip()
+            if "content" in data:
+                t["content"] = data["content"]
+            save_cta_templates(templates)
+            return jsonify({"template": t})
+    return jsonify({"error": "CTAテンプレートが見つかりません"}), 404
+
+
+@app.route("/api/cta-templates/<template_id>", methods=["DELETE"])
+def delete_cta_template(template_id):
+    templates = load_cta_templates()
+    templates = [t for t in templates if t["id"] != template_id]
+    save_cta_templates(templates)
     return jsonify({"success": True})
 
 
