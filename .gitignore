@@ -4,3 +4,5 @@ __pycache__/
 data/
 static/thumbnails/
 .DS_Store
+.vercel/
+glm/
