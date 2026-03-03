@@ -4,7 +4,7 @@ import json
 import uuid
 import tempfile
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
 from flask_cors import CORS
 import anthropic
 import requests as http_requests
@@ -31,6 +31,8 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 CONTEXTS_FILE = os.path.join(DATA_DIR, "contexts.json")
 ARTICLES_FILE = os.path.join(DATA_DIR, "articles.json")
+SESSIONS_FILE = os.path.join(DATA_DIR, "sessions.json")
+PROMPT_TEMPLATES_FILE = os.path.join(DATA_DIR, "prompt_templates.json")
 
 
 def load_json(path):
@@ -61,6 +63,22 @@ def save_articles(articles):
     save_json(ARTICLES_FILE, articles)
 
 
+def load_sessions():
+    return load_json(SESSIONS_FILE)
+
+
+def save_sessions(sessions):
+    save_json(SESSIONS_FILE, sessions)
+
+
+def load_prompt_templates():
+    return load_json(PROMPT_TEMPLATES_FILE)
+
+
+def save_prompt_templates(templates):
+    save_json(PROMPT_TEMPLATES_FILE, templates)
+
+
 def call_claude(system_prompt, user_prompt, *, json_mode=False, model=None):
     messages = [{"role": "user", "content": user_prompt}]
 
@@ -85,6 +103,23 @@ def call_claude(system_prompt, user_prompt, *, json_mode=False, model=None):
         return json.loads(text)
 
     return text
+
+
+def _stream_claude(system_prompt, user_prompt, *, model=None):
+    """Claude API をストリーミングで呼び出し、(chunk_text, full_text) を yield する。"""
+    messages = [{"role": "user", "content": user_prompt}]
+    kwargs = {
+        "model": model or DEFAULT_MODEL,
+        "max_tokens": 8192,
+        "system": system_prompt,
+        "messages": messages,
+    }
+    full_text = []
+    with client.messages.stream(**kwargs) as stream:
+        for text in stream.text_stream:
+            full_text.append(text)
+            yield text, None
+    yield "", "".join(full_text)
 
 
 def build_style_analysis_prompt(references):
@@ -285,17 +320,37 @@ def analyze_style():
         return jsonify({"error": str(e)}), 500
 
 
+def _sse_yield(obj):
+    return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n".encode("utf-8")
+
+
 @app.route("/api/interview/start", methods=["POST"])
 def start_interview():
-    data = request.json
+    data = request.json or {}
     style_guide = data.get("style_guide", {})
     title = data.get("title", "")
     memo = data.get("memo", "")
     sources = data.get("sources", [])
     model = data.get("model")
+    use_stream = request.args.get("stream") == "1"
 
     try:
         system, user = build_interview_prompt(style_guide, title, memo, sources)
+        if use_stream:
+            def gen():
+                try:
+                    for chunk, full in _stream_claude(system, user, model=model):
+                        if full is not None:
+                            yield _sse_yield({"done": True, "message": full})
+                        else:
+                            yield _sse_yield({"delta": chunk})
+                except Exception as e:
+                    yield _sse_yield({"error": str(e)})
+            return Response(
+                stream_with_context(gen()),
+                mimetype="text/event-stream",
+                headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+            )
         ai_message = call_claude(system, user, model=model)
         return jsonify({"message": ai_message})
     except Exception as e:
@@ -304,16 +359,33 @@ def start_interview():
 
 @app.route("/api/interview/continue", methods=["POST"])
 def continue_interview():
-    data = request.json
+    data = request.json or {}
     style_guide = data.get("style_guide", {})
     title = data.get("title", "")
     memo = data.get("memo", "")
     conversation = data.get("conversation", [])
     sources = data.get("sources", [])
     model = data.get("model")
+    use_stream = request.args.get("stream") == "1"
 
     try:
         system, user = build_followup_prompt(style_guide, title, memo, conversation, sources)
+        if use_stream:
+            def gen():
+                try:
+                    for chunk, full in _stream_claude(system, user, model=model):
+                        if full is not None:
+                            ready = "素材が揃いました" in full
+                            yield _sse_yield({"done": True, "message": full, "ready_to_write": ready})
+                        else:
+                            yield _sse_yield({"delta": chunk})
+                except Exception as e:
+                    yield _sse_yield({"error": str(e)})
+            return Response(
+                stream_with_context(gen()),
+                mimetype="text/event-stream",
+                headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+            )
         ai_message = call_claude(system, user, model=model)
         ready = "素材が揃いました" in ai_message
         return jsonify({"message": ai_message, "ready_to_write": ready})
@@ -323,16 +395,32 @@ def continue_interview():
 
 @app.route("/api/generate-article", methods=["POST"])
 def generate_article():
-    data = request.json
+    data = request.json or {}
     style_guide = data.get("style_guide", {})
     title = data.get("title", "")
     memo = data.get("memo", "")
     conversation = data.get("conversation", [])
     sources = data.get("sources", [])
     model = data.get("model")
+    use_stream = request.args.get("stream") == "1"
 
     try:
         system, user = build_article_prompt(style_guide, title, memo, conversation, sources)
+        if use_stream:
+            def gen():
+                try:
+                    for chunk, full in _stream_claude(system, user, model=model):
+                        if full is not None:
+                            yield _sse_yield({"done": True, "article": full})
+                        else:
+                            yield _sse_yield({"delta": chunk})
+                except Exception as e:
+                    yield _sse_yield({"error": str(e)})
+            return Response(
+                stream_with_context(gen()),
+                mimetype="text/event-stream",
+                headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+            )
         article_html = call_claude(system, user, model=model)
         return jsonify({"article": article_html})
     except Exception as e:
@@ -597,14 +685,30 @@ HTMLタグだけを出力し、コードブロック記法で囲まないでく�
 
 @app.route("/api/rewrite/start", methods=["POST"])
 def rewrite_start():
-    data = request.json
+    data = request.json or {}
     style_guide = data.get("style_guide", {})
     original_article = data.get("original_article", "")
     user_angle = data.get("user_angle", "")
     model = data.get("model")
+    use_stream = request.args.get("stream") == "1"
 
     try:
         system, user = build_rewrite_interview_prompt(style_guide, original_article, user_angle)
+        if use_stream:
+            def gen():
+                try:
+                    for chunk, full in _stream_claude(system, user, model=model):
+                        if full is not None:
+                            yield _sse_yield({"done": True, "message": full})
+                        else:
+                            yield _sse_yield({"delta": chunk})
+                except Exception as e:
+                    yield _sse_yield({"error": str(e)})
+            return Response(
+                stream_with_context(gen()),
+                mimetype="text/event-stream",
+                headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+            )
         ai_message = call_claude(system, user, model=model)
         return jsonify({"message": ai_message})
     except Exception as e:
@@ -613,15 +717,32 @@ def rewrite_start():
 
 @app.route("/api/rewrite/continue", methods=["POST"])
 def rewrite_continue():
-    data = request.json
+    data = request.json or {}
     style_guide = data.get("style_guide", {})
     original_article = data.get("original_article", "")
     user_angle = data.get("user_angle", "")
     conversation = data.get("conversation", [])
     model = data.get("model")
+    use_stream = request.args.get("stream") == "1"
 
     try:
         system, user = build_rewrite_followup_prompt(style_guide, original_article, user_angle, conversation)
+        if use_stream:
+            def gen():
+                try:
+                    for chunk, full in _stream_claude(system, user, model=model):
+                        if full is not None:
+                            ready = "素材が揃いました" in full
+                            yield _sse_yield({"done": True, "message": full, "ready_to_write": ready})
+                        else:
+                            yield _sse_yield({"delta": chunk})
+                except Exception as e:
+                    yield _sse_yield({"error": str(e)})
+            return Response(
+                stream_with_context(gen()),
+                mimetype="text/event-stream",
+                headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+            )
         ai_message = call_claude(system, user, model=model)
         ready = "素材が揃いました" in ai_message
         return jsonify({"message": ai_message, "ready_to_write": ready})
@@ -631,16 +752,32 @@ def rewrite_continue():
 
 @app.route("/api/rewrite/generate", methods=["POST"])
 def rewrite_generate():
-    data = request.json
+    data = request.json or {}
     style_guide = data.get("style_guide", {})
     original_article = data.get("original_article", "")
     user_angle = data.get("user_angle", "")
     conversation = data.get("conversation", [])
     sources = data.get("sources", [])
     model = data.get("model")
+    use_stream = request.args.get("stream") == "1"
 
     try:
         system, user = build_rewrite_article_prompt(style_guide, original_article, user_angle, conversation, sources)
+        if use_stream:
+            def gen():
+                try:
+                    for chunk, full in _stream_claude(system, user, model=model):
+                        if full is not None:
+                            yield _sse_yield({"done": True, "article": full})
+                        else:
+                            yield _sse_yield({"delta": chunk})
+                except Exception as e:
+                    yield _sse_yield({"error": str(e)})
+            return Response(
+                stream_with_context(gen()),
+                mimetype="text/event-stream",
+                headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+            )
         article_html = call_claude(system, user, model=model)
         return jsonify({"article": article_html})
     except Exception as e:
@@ -787,6 +924,7 @@ def create_article():
     if not title:
         return jsonify({"error": "タイトルを入力してください"}), 400
 
+    created_at = datetime.now().isoformat()
     article = {
         "id": str(uuid.uuid4()),
         "title": title,
@@ -795,7 +933,8 @@ def create_article():
         "memo": memo,
         "conversation": conversation,
         "context_id": context_id,
-        "created_at": datetime.now().isoformat(),
+        "created_at": created_at,
+        "versions": [{"html": html, "text": text, "created_at": created_at}],
     }
 
     articles = load_articles()
@@ -813,13 +952,24 @@ def update_article(article_id):
     if idx is None:
         return jsonify({"error": "記事が見つかりません"}), 404
 
-    articles[idx]["html"] = data.get("html", articles[idx].get("html", ""))
-    articles[idx]["text"] = data.get("text", articles[idx].get("text", ""))
+    art = articles[idx]
+    if "versions" not in art:
+        art["versions"] = []
+    now = datetime.now().isoformat()
+    art["versions"].insert(0, {
+        "html": art.get("html", ""),
+        "text": art.get("text", ""),
+        "created_at": now,
+    })
+    art["versions"] = art["versions"][:20]
+
+    art["html"] = data.get("html", art.get("html", ""))
+    art["text"] = data.get("text", art.get("text", ""))
     if data.get("title"):
-        articles[idx]["title"] = data["title"]
-    articles[idx]["updated_at"] = datetime.now().isoformat()
+        art["title"] = data["title"]
+    art["updated_at"] = now
     save_articles(articles)
-    return jsonify({"article": articles[idx]})
+    return jsonify({"article": art})
 
 
 @app.route("/api/articles/<article_id>", methods=["DELETE"])
@@ -827,6 +977,142 @@ def delete_article(article_id):
     articles = load_articles()
     articles = [a for a in articles if a["id"] != article_id]
     save_articles(articles)
+    return jsonify({"success": True})
+
+
+@app.route("/api/sessions", methods=["GET"])
+def list_sessions():
+    sessions = load_sessions()
+    sessions = sorted(sessions, key=lambda s: s.get("updated_at", ""), reverse=True)
+    return jsonify({"sessions": sessions})
+
+
+@app.route("/api/sessions", methods=["POST"])
+def create_session():
+    data = request.json or {}
+    session = {
+        "id": str(uuid.uuid4()),
+        "mode": data.get("mode", "create"),
+        "step": data.get("step", 1),
+        "title": data.get("title", ""),
+        "memo": data.get("memo", ""),
+        "conversation": data.get("conversation", []),
+        "style_guide": data.get("style_guide"),
+        "context_id": data.get("context_id"),
+        "sources": data.get("sources", []),
+        "article_html": data.get("article_html", ""),
+        "original_article": data.get("original_article", ""),
+        "user_angle": data.get("user_angle", ""),
+        "original_title": data.get("original_title", ""),
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+    }
+    sessions = load_sessions()
+    sessions.insert(0, session)
+    save_sessions(sessions)
+    return jsonify({"session": session})
+
+
+@app.route("/api/sessions/<session_id>", methods=["GET"])
+def get_session(session_id):
+    sessions = load_sessions()
+    for s in sessions:
+        if s["id"] == session_id:
+            return jsonify({"session": s})
+    return jsonify({"error": "セッションが見つかりません"}), 404
+
+
+@app.route("/api/sessions/<session_id>", methods=["PUT"])
+def update_session(session_id):
+    data = request.json or {}
+    sessions = load_sessions()
+    for s in sessions:
+        if s["id"] == session_id:
+            if "step" in data:
+                s["step"] = data["step"]
+            if "title" in data:
+                s["title"] = data["title"]
+            if "memo" in data:
+                s["memo"] = data["memo"]
+            if "conversation" in data:
+                s["conversation"] = data["conversation"]
+            if "style_guide" in data:
+                s["style_guide"] = data["style_guide"]
+            if "context_id" in data:
+                s["context_id"] = data["context_id"]
+            if "sources" in data:
+                s["sources"] = data["sources"]
+            if "article_html" in data:
+                s["article_html"] = data["article_html"]
+            if "user_angle" in data:
+                s["user_angle"] = data["user_angle"]
+            if "original_article" in data:
+                s["original_article"] = data["original_article"]
+            if "original_title" in data:
+                s["original_title"] = data["original_title"]
+            s["updated_at"] = datetime.now().isoformat()
+            save_sessions(sessions)
+            return jsonify({"session": s})
+    return jsonify({"error": "セッションが見つかりません"}), 404
+
+
+@app.route("/api/sessions/<session_id>", methods=["DELETE"])
+def delete_session(session_id):
+    sessions = load_sessions()
+    sessions = [s for s in sessions if s["id"] != session_id]
+    save_sessions(sessions)
+    return jsonify({"success": True})
+
+
+@app.route("/api/prompt-templates", methods=["GET"])
+def list_prompt_templates():
+    templates = load_prompt_templates()
+    return jsonify({"templates": templates})
+
+
+@app.route("/api/prompt-templates", methods=["POST"])
+def create_prompt_template():
+    data = request.json or {}
+    name = (data.get("name") or "").strip()
+    title = data.get("title", "")
+    memo = data.get("memo", "")
+    if not name:
+        return jsonify({"error": "テンプレート名を入力してください"}), 400
+    template = {
+        "id": str(uuid.uuid4()),
+        "name": name,
+        "title": title,
+        "memo": memo,
+        "created_at": datetime.now().isoformat(),
+    }
+    templates = load_prompt_templates()
+    templates.insert(0, template)
+    save_prompt_templates(templates)
+    return jsonify({"template": template})
+
+
+@app.route("/api/prompt-templates/<template_id>", methods=["PUT"])
+def update_prompt_template(template_id):
+    data = request.json or {}
+    templates = load_prompt_templates()
+    for t in templates:
+        if t["id"] == template_id:
+            if "name" in data:
+                t["name"] = (data["name"] or "").strip()
+            if "title" in data:
+                t["title"] = data["title"]
+            if "memo" in data:
+                t["memo"] = data["memo"]
+            save_prompt_templates(templates)
+            return jsonify({"template": t})
+    return jsonify({"error": "テンプレートが見つかりません"}), 404
+
+
+@app.route("/api/prompt-templates/<template_id>", methods=["DELETE"])
+def delete_prompt_template(template_id):
+    templates = load_prompt_templates()
+    templates = [t for t in templates if t["id"] != template_id]
+    save_prompt_templates(templates)
     return jsonify({"success": True})
 
 

@@ -30,6 +30,23 @@
     --radius-sm: 12px;
   }
 
+  [data-theme="dark"] {
+    --bg: #15202b;
+    --surface: #192734;
+    --surface-hover: #22303c;
+    --surface-active: #2d3d4d;
+    --border: #38444d;
+    --border-focus: #5a6e7d;
+    --text: #e7e9ea;
+    --text-muted: #8b98a5;
+    --text-dim: #6e767d;
+    --accent: #e7e9ea;
+    --accent-subtle: #8b98a5;
+    --x-blue-dim: rgba(29, 155, 240, 0.2);
+    --green-dim: rgba(0, 186, 124, 0.2);
+    --red-dim: rgba(244, 33, 46, 0.2);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
@@ -60,6 +77,31 @@
     display: flex;
     align-items: center;
     gap: 16px;
+  }
+  .app-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .btn-icon:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+    border-color: var(--border-focus);
   }
 
   .app-logo {
@@ -272,9 +314,16 @@
 
   .library-empty {
     text-align: center;
-    padding: 20px 12px;
+    padding: 24px 16px;
     color: var(--text-dim);
     font-size: 14px;
+    line-height: 1.6;
+  }
+  .library-empty-title {
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-size: 13px;
   }
 
   /* Library items */
@@ -701,6 +750,16 @@
 
   .btn-ghost:hover { color: var(--text); background: var(--surface-hover); border-radius: 999px; }
 
+  .btn:focus-visible,
+  .btn-icon:focus-visible,
+  .field input:focus-visible,
+  .field textarea:focus-visible,
+  .ref-card textarea:focus-visible,
+  .modal button:focus-visible {
+    outline: 2px solid var(--x-blue);
+    outline-offset: 2px;
+  }
+
   .btn-sm {
     padding: 10px 20px;
     font-size: 14px;
@@ -774,6 +833,60 @@
   .chat-input-area textarea:focus {
     border-color: var(--x-blue);
   }
+
+  .token-count-wrap {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .token-count-label {
+    display: block;
+    margin-bottom: 4px;
+  }
+  .token-count-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .token-count-fill {
+    height: 100%;
+    background: var(--x-blue);
+    transition: width 0.2s;
+  }
+  .token-count-wrap.token-warn .token-count-fill {
+    background: #f59e0b;
+  }
+
+  .article-char-count {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .article-char-count.normal { color: var(--x-blue); }
+  .article-char-count.premium { color: var(--text); }
+  .article-char-count.over { color: #f59e0b; }
+
+  .template-row { margin-top: 16px; }
+  .template-row .field-label { display: block; margin-bottom: 6px; }
+  .template-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .template-controls select { min-width: 180px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+
+  .version-panel { margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .version-panel-title { padding: 8px 12px; background: var(--surface-hover); cursor: pointer; font-size: 13px; font-weight: 600; }
+  .version-list-wrap { max-height: 0; overflow: hidden; transition: max-height 0.2s; }
+  .version-list-wrap.open { max-height: 240px; overflow-y: auto; }
+  .version-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-top: 1px solid var(--border); font-size: 12px; }
+  .version-date { flex: 1; color: var(--text-dim); }
+  .version-diff-area { border-top: 1px solid var(--border); padding: 12px; background: var(--bg); }
+  .version-diff-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; color: var(--text-dim); }
+  .version-diff-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-height: 200px; overflow: auto; }
+  .version-diff-pre { margin: 0; padding: 8px; font-size: 11px; background: var(--surface); border-radius: 4px; overflow: auto; white-space: pre-wrap; word-break: break-all; }
+
+  .shortcut-list { padding: 8px 0; }
+  .shortcut-row { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 15px; }
+  .shortcut-row:last-child { border-bottom: none; }
+  .shortcut-row kbd { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 13px; font-family: inherit; }
 
   /* Article output - X article style */
   .article-output {
@@ -866,7 +979,7 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Toast - X notification style */
+  /* Toast - type: success / error / info */
   .toast {
     position: fixed;
     bottom: 40px;
@@ -875,18 +988,26 @@
     background: var(--x-blue);
     color: #fff;
     padding: 14px 28px;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 15px;
     font-weight: 500;
     opacity: 0;
     transition: all 0.3s;
     z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
   }
 
   .toast.show {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+
+  .toast.toast-success { background: var(--green); }
+  .toast.toast-error { background: var(--red); }
+  .toast.toast-info { background: var(--x-blue); }
 
   /* Step 2-4 content wrapper for better readability */
   .content-narrow {
@@ -1493,9 +1614,13 @@
         <p class="app-subtitle">リファレンス記事のスタイルを再現して、記事を生成する</p>
       </div>
     </div>
-    <div class="model-selector">
-      <span class="model-selector-label">Model</span>
-      <select class="model-select" id="model-select"></select>
+    <div class="app-header-right">
+      <button type="button" class="btn-icon" id="theme-toggle" onclick="toggleDarkMode()" title="ダークモード" aria-label="テーマ切替">☀</button>
+      <button type="button" class="btn-icon" onclick="showShortcutModal()" title="ショートカット (?)" aria-label="ショートカット一覧">?</button>
+      <div class="model-selector">
+        <span class="model-selector-label">Model</span>
+        <select class="model-select" id="model-select"></select>
+      </div>
     </div>
   </header>
 
@@ -1531,12 +1656,22 @@
       <div class="library-panel">
 
         <div class="library-section">
+          <div class="library-header" onclick="toggleLibSection('sessions')">
+            <span class="library-header-title">下書き</span>
+            <span class="library-header-count" id="session-count">0</span>
+          </div>
+          <div class="library-list" id="lib-sessions">
+            <div class="library-empty"><div class="library-empty-title">下書きはまだありません</div>インタビューを開始するとここに保存されます。</div>
+          </div>
+        </div>
+
+        <div class="library-section">
           <div class="library-header" onclick="toggleLibSection('styles')">
             <span class="library-header-title">スタイル</span>
             <span class="library-header-count" id="style-count">0</span>
           </div>
           <div class="library-list" id="lib-styles">
-            <div class="library-empty">まだありません</div>
+            <div class="library-empty"><div class="library-empty-title">スタイルがまだありません</div>リファレンスを入力して「保存して分析」で作成。</div>
           </div>
         </div>
 
@@ -1546,7 +1681,7 @@
             <span class="library-header-count" id="article-count">0</span>
           </div>
           <div class="library-list" id="lib-articles">
-            <div class="library-empty">まだありません</div>
+            <div class="library-empty"><div class="library-empty-title">記事がまだありません</div>生成した記事を保存すると一覧に表示されます。</div>
           </div>
         </div>
 
@@ -1632,6 +1767,17 @@
         <textarea id="article-memo" placeholder="記事に入れたい内容を箇条書きで...&#10;&#10;例：&#10;- 愚痴は下の立場の人に言った時点でアウト&#10;- 自分もかつては愚痴ばかり言っていた&#10;- 社内サーベイで不満を吸い上げる仕組みを作った"></textarea>
       </div>
 
+      <div class="template-row">
+        <label class="field-label">テンプレート</label>
+        <div class="template-controls">
+          <select id="prompt-template-select">
+            <option value="">-- テンプレートを選択 --</option>
+          </select>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="applyPromptTemplate()">読み込む</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="saveAsPromptTemplate()">現在の内容を保存</button>
+        </div>
+      </div>
+
       <div class="sources-panel">
         <div class="sources-header" onclick="toggleSources()">
           <span class="sources-header-title">参考資料<span class="sources-header-count" id="sources-count">0</span></span>
@@ -1647,6 +1793,7 @@
         </div>
       </div>
 
+      <div class="token-count-wrap token-count-display"></div>
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="goToStep(1)">戻る</button>
         <button class="btn btn-primary" onclick="startInterview()">インタビューを開始</button>
@@ -1667,6 +1814,7 @@
       <button class="btn btn-primary" onclick="sendReply()" id="btn-send">送信</button>
     </div>
 
+    <div class="token-count-wrap token-count-display"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="goToStep(2)">戻る</button>
       <button class="btn btn-secondary" onclick="skipToGenerate()">インタビューを終了して記事を生成</button>
@@ -1685,6 +1833,7 @@
 
     <div style="position:relative;">
       <div class="article-output" id="article-output"></div>
+      <div class="article-char-count" id="article-char-count"></div>
       <div class="edit-popover" id="edit-popover">
         <div class="edit-popover-selected" id="edit-popover-selected"></div>
         <div class="edit-popover-row">
@@ -1695,7 +1844,9 @@
     </div>
 
     <div class="btn-row">
-      <button class="btn btn-primary" onclick="copyArticle()">記事をコピー</button>
+      <button class="btn btn-primary" onclick="copyArticle()">HTMLでコピー</button>
+      <button class="btn btn-secondary btn-sm" onclick="copyArticleAsMarkdown()">Markdownでコピー</button>
+      <button class="btn btn-secondary btn-sm" onclick="copyArticleAsText()">テキストでコピー</button>
       <button class="btn btn-secondary" onclick="saveArticle()">記事を保存</button>
       <button class="btn btn-ghost" onclick="goToStep(3)">インタビューに戻る</button>
       <button class="btn btn-ghost" onclick="goToStep(1)">最初からやり直す</button>
@@ -1785,6 +1936,7 @@
       <button class="btn btn-primary" onclick="sendRwReply()" id="rw-btn-send">送信</button>
     </div>
 
+    <div class="token-count-wrap token-count-display"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="goToRwStep(1)">戻る</button>
       <button class="btn btn-secondary" onclick="skipToRwGenerate()">インタビューを終了してリライト記事を生成</button>
@@ -1803,6 +1955,7 @@
 
     <div style="position:relative;">
       <div class="article-output" id="rw-article-output"></div>
+      <div class="article-char-count" id="rw-article-char-count"></div>
       <div class="edit-popover" id="rw-edit-popover">
         <div class="edit-popover-selected" id="rw-edit-popover-selected"></div>
         <div class="edit-popover-row">
@@ -1813,7 +1966,9 @@
     </div>
 
     <div class="btn-row">
-      <button class="btn btn-primary" onclick="copyRwArticle()">記事をコピー</button>
+      <button class="btn btn-primary" onclick="copyRwArticle()">HTMLでコピー</button>
+      <button class="btn btn-secondary btn-sm" onclick="copyRwArticleAsMarkdown()">Markdownでコピー</button>
+      <button class="btn btn-secondary btn-sm" onclick="copyRwArticleAsText()">テキストでコピー</button>
       <button class="btn btn-secondary" onclick="saveRwArticle()">記事を保存</button>
       <button class="btn btn-ghost" onclick="goToRwStep(2)">インタビューに戻る</button>
       <button class="btn btn-ghost" onclick="goToRwStep(1)">最初からやり直す</button>
@@ -1862,10 +2017,60 @@ let state = {
   articles: [],
   model: null,
   sources: [],
+  currentSessionId: null,
 };
 
 function getSelectedModel() {
   return document.getElementById("model-select").value || null;
+}
+
+const TOKEN_CONTEXT_MAX = 200000;
+function estimateTokens(text) {
+  return Math.ceil((text || "").length / 2);
+}
+function getCreateTokenEstimate() {
+  let n = 500;
+  if (state.styleGuide) n += estimateTokens(JSON.stringify(state.styleGuide));
+  n += estimateTokens(state.title) + estimateTokens(state.memo);
+  state.conversation.forEach(m => { n += estimateTokens(m.content); });
+  (state.sources || []).forEach(s => { n += estimateTokens(s.text); });
+  return n;
+}
+function getRewriteTokenEstimate() {
+  let n = 500;
+  if (rwState.styleGuide) n += estimateTokens(JSON.stringify(rwState.styleGuide));
+  n += estimateTokens(rwState.originalArticle) + estimateTokens(rwState.userAngle);
+  rwState.conversation.forEach(m => { n += estimateTokens(m.content); });
+  return n;
+}
+function updateArticleCharCount(outputId, countElId) {
+  const output = document.getElementById(outputId);
+  const countEl = document.getElementById(countElId);
+  if (!output || !countEl) return;
+  const n = (output.innerText || "").length;
+  countEl.textContent = `${n.toLocaleString()} 文字`;
+  countEl.className = "article-char-count";
+  if (n <= 140) countEl.classList.add("normal");
+  else if (n <= 25000) countEl.classList.add("premium");
+  else countEl.classList.add("over");
+  if (n > 0) {
+    countEl.textContent += " — 140字以下: 通常ポスト / 25,000字以下: Premium記事";
+  }
+}
+
+function updateTokenCount() {
+  document.querySelectorAll(".token-count-display").forEach(el => {
+    const parent = el.closest(".section");
+    if (!parent || !parent.classList.contains("visible")) return;
+    const isCreate = document.getElementById("create-flow").contains(parent);
+    const isRw = document.getElementById("rewrite-flow").contains(parent);
+    let n = 0;
+    if (isCreate) n = getCreateTokenEstimate();
+    else if (isRw) n = getRewriteTokenEstimate();
+    const pct = Math.min(100, (n / TOKEN_CONTEXT_MAX) * 100);
+    el.innerHTML = `<span class="token-count-label">約 ${n.toLocaleString()} / ${(TOKEN_CONTEXT_MAX / 1000).toFixed(0)}k トークン</span><div class="token-count-bar"><div class="token-count-fill" style="width:${pct}%"></div></div>`;
+    el.classList.toggle("token-warn", pct > 70);
+  });
 }
 
 async function loadModels() {
@@ -1902,13 +2107,21 @@ function goToStep(n) {
       regenBtn.style.display = "none";
     }
   }
+  setTimeout(updateTokenCount, 0);
+  setTimeout(() => {
+    const el = n === 1 ? document.getElementById("ref1") : n === 2 ? document.getElementById("article-title") : n === 3 ? document.getElementById("chat-input") : document.getElementById("edit-full-input");
+    if (el) el.focus();
+  }, 100);
 }
 
-function showToast(msg) {
+let toastTimeout = null;
+function showToast(msg, type = "info", durationMs = 0) {
   const t = document.getElementById("toast");
   t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2500);
+  t.className = "toast show toast-" + (type === "success" ? "success" : type === "error" ? "error" : "info");
+  if (toastTimeout) clearTimeout(toastTimeout);
+  const duration = durationMs || (type === "error" ? 5000 : type === "success" ? 2800 : 2500);
+  toastTimeout = setTimeout(() => { t.classList.remove("show"); toastTimeout = null; }, duration);
 }
 
 function showLoading(container, msg, useGhost = false) {
@@ -1951,6 +2164,75 @@ function addChatBubble(role, content) {
   area.scrollTop = area.scrollHeight;
 }
 
+/** SSE ストリームを読み、onDelta / onDone / onError を呼ぶ。stream=1 付きで POST する。 */
+async function fetchSSE(url, body, { onDelta, onDone, onError }) {
+  const sep = url.includes("?") ? "&" : "?";
+  const res = await fetch(url + sep + "stream=1", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    onError(err.error || res.statusText);
+    return;
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop() || "";
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const raw = line.slice(6).trim();
+          if (raw === "") continue;
+          try {
+            const data = JSON.parse(raw);
+            if (data.error) { onError(data.error); return; }
+            if (data.delta != null) onDelta(data.delta);
+            if (data.done) {
+              const p = onDone(data);
+              if (p && typeof p.then === "function") await p;
+            }
+          } catch (_) {}
+        }
+      }
+    }
+    if (buf.startsWith("data: ")) {
+      try {
+        const data = JSON.parse(buf.slice(6).trim());
+        if (data.done) {
+          const p = onDone(data);
+          if (p && typeof p.then === "function") await p;
+        }
+      } catch (_) {}
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/** ストリーミング用: 空の吹き出しを追加し、appendText で追記する。返り値は { bubble, appendText }。 */
+function addChatBubbleStreaming(areaId, role) {
+  const area = document.getElementById(areaId);
+  const bubble = document.createElement("div");
+  bubble.className = `chat-bubble ${role}`;
+  bubble.textContent = "";
+  area.appendChild(bubble);
+  return {
+    bubble,
+    appendText(text) {
+      bubble.textContent += text;
+      area.scrollTop = area.scrollHeight;
+    },
+  };
+}
+
 function getRefValues() {
   return [
     document.getElementById("ref1").value,
@@ -1980,12 +2262,185 @@ async function loadContexts() {
   }
 }
 
+let stateSessions = [];
+
+async function loadSessions() {
+  try {
+    const res = await fetch("/api/sessions");
+    const data = await res.json();
+    stateSessions = data.sessions || [];
+    renderSessionList();
+  } catch (e) {
+    console.error("Failed to load sessions", e);
+  }
+}
+
+let promptTemplates = [];
+async function loadPromptTemplates() {
+  try {
+    const res = await fetch("/api/prompt-templates");
+    const data = await res.json();
+    promptTemplates = data.templates || [];
+    renderPromptTemplateSelect();
+  } catch (e) {
+    console.error("Failed to load prompt templates", e);
+  }
+}
+function renderPromptTemplateSelect() {
+  const sel = document.getElementById("prompt-template-select");
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = "<option value=\"\">-- テンプレートを選択 --</option>" + promptTemplates.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("");
+  if (cur && promptTemplates.some(t => t.id === cur)) sel.value = cur;
+}
+function applyPromptTemplate() {
+  const sel = document.getElementById("prompt-template-select");
+  const id = sel && sel.value;
+  if (!id) { showToast("テンプレートを選択してください"); return; }
+  const t = promptTemplates.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById("article-title").value = t.title || "";
+  document.getElementById("article-memo").value = t.memo || "";
+  state.title = t.title || "";
+  state.memo = t.memo || "";
+  showToast(`「${t.name}」を読み込みました`);
+}
+async function saveAsPromptTemplate() {
+  const name = prompt("テンプレート名を入力してください");
+  if (!name || !name.trim()) return;
+  const title = document.getElementById("article-title").value || "";
+  const memo = document.getElementById("article-memo").value || "";
+  try {
+    const res = await fetch("/api/prompt-templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), title, memo }),
+    });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, "error"); return; }
+    await loadPromptTemplates();
+    showToast("テンプレートを保存しました", "success");
+  } catch (e) {
+    showToast("保存に失敗しました", "error");
+  }
+}
+
+function renderSessionList() {
+  const list = document.getElementById("lib-sessions");
+  const countEl = document.getElementById("session-count");
+  if (!list) return;
+  if (countEl) countEl.textContent = stateSessions.length;
+  if (stateSessions.length === 0) {
+    list.innerHTML = '<div class="library-empty"><div class="library-empty-title">下書きはまだありません</div>インタビューを開始すると、ここに自動保存されます。再開は一覧からクリックで。</div>';
+    return;
+  }
+  list.innerHTML = stateSessions.map(s => {
+    const label = s.mode === "rewrite" ? (s.original_title || "リライト") : (s.title || "無題");
+    const stepLabel = s.mode === "create" ? `ステップ${s.step || 1}` : `ステップ${s.step || 1}`;
+    const updated = s.updated_at ? new Date(s.updated_at).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+    return `
+      <div class="lib-item" onclick="resumeSession('${s.id}')">
+        <div class="lib-item-icon" style="background:var(--accent);color:#fff;">下</div>
+        <div class="lib-item-info">
+          <div class="lib-item-name">${escapeHtml(label)}</div>
+          <div class="lib-item-meta">${s.mode === "rewrite" ? "リライト" : "新規"} / ${stepLabel} ${updated ? "・" + updated : ""}</div>
+        </div>
+        <span class="lib-item-badge click">再開</span>
+        <button class="lib-item-delete" onclick="event.stopPropagation(); deleteSession('${s.id}')" title="削除">&times;</button>
+      </div>
+    `;
+  }).join("");
+}
+
+async function createSession(mode, data) {
+  try {
+    const payload = { mode, step: data.step ?? 1, title: data.title ?? "", memo: data.memo ?? "", conversation: data.conversation ?? [], style_guide: data.style_guide ?? null, context_id: data.context_id ?? null, sources: data.sources ?? [], article_html: data.article_html ?? "", original_article: data.original_article ?? "", user_angle: data.user_angle ?? "", original_title: data.original_title ?? "" };
+    const res = await fetch("/api/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const json = await res.json();
+    if (json.session) {
+      if (mode === "create") state.currentSessionId = json.session.id;
+      else rwState.currentSessionId = json.session.id;
+      await loadSessions();
+      return json.session.id;
+    }
+  } catch (e) { console.error("createSession", e); }
+  return null;
+}
+
+async function updateSession(id, data) {
+  if (!id) return;
+  try {
+    await fetch(`/api/sessions/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    await loadSessions();
+  } catch (e) { console.error("updateSession", e); }
+}
+
+async function deleteSession(id) {
+  try {
+    await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+    if (state.currentSessionId === id) state.currentSessionId = null;
+    if (rwState.currentSessionId === id) rwState.currentSessionId = null;
+    await loadSessions();
+    showToast("下書きを削除しました", "success");
+  } catch (e) { showToast("削除に失敗しました", "error"); }
+}
+
+async function resumeSession(id) {
+  try {
+    const res = await fetch(`/api/sessions/${id}`);
+    const data = await res.json();
+    if (!data.session) { showToast("セッションを読み込めませんでした", "error"); return; }
+    const s = data.session;
+    if (s.mode === "rewrite") {
+      switchMode("rewrite");
+      rwState.originalArticle = s.original_article || "";
+      rwState.originalTitle = s.original_title || "";
+      rwState.userAngle = s.user_angle || "";
+      rwState.styleGuide = s.style_guide || null;
+      rwState.activeContextId = s.context_id || null;
+      rwState.conversation = s.conversation || [];
+      rwState.articleHtml = s.article_html || "";
+      rwState.currentSessionId = s.id;
+      document.getElementById("rw-original").value = rwState.originalArticle;
+      document.getElementById("rw-angle").value = rwState.userAngle;
+      const area = document.getElementById("rw-chat-area");
+      if (area) { area.innerHTML = ""; rwState.conversation.forEach(m => addRwChatBubble(m.role, m.content)); }
+      const out = document.getElementById("rw-article-output");
+      if (out) { out.innerHTML = rwState.articleHtml || ""; updateArticleCharCount("rw-article-output", "rw-article-char-count"); }
+      goToRwStep(Math.min(s.step || 1, 3));
+      renderRwStyleList();
+      showToast("下書きを再開しました", "success");
+    } else {
+      switchMode("create");
+      state.title = s.title || "";
+      state.memo = s.memo || "";
+      state.styleGuide = s.style_guide || null;
+      state.activeContextId = s.context_id || null;
+      state.conversation = s.conversation || [];
+      state.articleHtml = s.article_html || "";
+      state.sources = s.sources || [];
+      state.currentSessionId = s.id;
+      document.getElementById("article-title").value = state.title;
+      document.getElementById("article-memo").value = state.memo;
+      renderSources();
+      const area = document.getElementById("chat-area");
+      if (area) { area.innerHTML = ""; state.conversation.forEach(m => addChatBubble(m.role, m.content)); }
+      const out = document.getElementById("article-output");
+      if (out) { out.innerHTML = state.articleHtml || ""; updateArticleCharCount("article-output", "article-char-count"); }
+      goToStep(Math.min(s.step || 1, 4));
+      if (state.activeContextId) { const ctx = state.contexts.find(c => c.id === state.activeContextId); if (ctx) { setRefValues(ctx.references); state.styleGuide = ctx.style_guide; renderStylePreview(ctx.style_guide); } }
+      renderContextList();
+      showToast("下書きを再開しました", "success");
+    }
+  } catch (e) { showToast("下書きの再開に失敗しました", "error"); }
+}
+
 function renderContextList() {
   const list = document.getElementById("lib-styles");
   document.getElementById("style-count").textContent = state.contexts.length;
 
   if (state.contexts.length === 0) {
-    list.innerHTML = '<div class="library-empty">まだありません</div>';
+    list.innerHTML = '<div class="library-empty"><div class="library-empty-title">スタイルがまだありません</div>右のリファレンス欄に記事を入力し「保存して分析」でスタイルを作成できます。</div>';
     return;
   }
 
@@ -2060,9 +2515,9 @@ async function deleteContext(id) {
       document.getElementById("ctx-name").value = "";
     }
     await loadContexts();
-    showToast("削除しました");
+    showToast("削除しました", "success");
   } catch (e) {
-    showToast("削除に失敗しました");
+    showToast("削除に失敗しました", "error");
   }
 }
 
@@ -2106,9 +2561,9 @@ async function saveAndAnalyze() {
     await loadContexts();
     renderStylePreview(styleGuide);
     goToStep(2);
-    showToast("保存して分析が完了しました");
+    showToast("保存して分析が完了しました", "success");
   } catch (e) {
-    showToast("エラー: " + e.message);
+    showToast("エラー: " + e.message, "error");
   } finally {
     btn.disabled = false;
     btn.textContent = "保存して分析";
@@ -2128,9 +2583,9 @@ async function analyzeOnly() {
     state.styleGuide = styleGuide;
     renderStylePreview(styleGuide);
     goToStep(2);
-    showToast("スタイル分析が完了しました");
+    showToast("スタイル分析が完了しました", "success");
   } catch (e) {
-    showToast("エラー: " + e.message);
+    showToast("エラー: " + e.message, "error");
   } finally {
     btn.disabled = false;
     btn.textContent = "保存せず分析のみ";
@@ -2180,22 +2635,29 @@ async function startInterview() {
   document.getElementById("chat-area").innerHTML = "";
   goToStep(3);
 
+  await createSession("create", { step: 3, title: state.title, memo: state.memo, style_guide: state.styleGuide, context_id: state.activeContextId, sources: state.sources, conversation: [] });
+
   const chatArea = document.getElementById("chat-area");
   showLoading(chatArea, "質問を考えています...");
 
   try {
-    const res = await fetch("/api/interview/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ style_guide: state.styleGuide, title: state.title, memo: state.memo, sources: state.sources, model: getSelectedModel() }),
+    let streamBubble = null;
+    await fetchSSE("/api/interview/start", { style_guide: state.styleGuide, title: state.title, memo: state.memo, sources: state.sources, model: getSelectedModel() }, {
+      onDelta(text) {
+        if (!streamBubble) { removeLoading(); streamBubble = addChatBubbleStreaming("chat-area", "ai"); }
+        streamBubble.appendText(text);
+      },
+      onDone(data) {
+        if (data.message != null) state.conversation.push({ role: "assistant", content: data.message });
+        if (state.currentSessionId) updateSession(state.currentSessionId, { conversation: state.conversation, step: 3 });
+        updateTokenCount();
+      },
+      onError(msg) { removeLoading(); showToast("エラー: " + msg, "error"); }
     });
-    const data = await res.json();
-    removeLoading();
-    addChatBubble("ai", data.message);
-    state.conversation.push({ role: "assistant", content: data.message });
+    if (streamBubble) removeLoading();
   } catch (e) {
     removeLoading();
-    showToast("エラー: " + e.message);
+    showToast("エラー: " + e.message, "error");
   }
 }
 
@@ -2221,26 +2683,31 @@ async function sendReply() {
   showLoading(chatArea, "考えています...");
 
   try {
-    const res = await fetch("/api/interview/continue", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        style_guide: state.styleGuide,
-        title: state.title,
-        memo: state.memo,
-        conversation: state.conversation,
-        sources: state.sources,
-        model: getSelectedModel(),
-      }),
+    let streamBubble = null;
+    await fetchSSE("/api/interview/continue", {
+      style_guide: state.styleGuide,
+      title: state.title,
+      memo: state.memo,
+      conversation: state.conversation,
+      sources: state.sources,
+      model: getSelectedModel(),
+    }, {
+      onDelta(text) {
+        if (!streamBubble) { removeLoading(); streamBubble = addChatBubbleStreaming("chat-area", "ai"); }
+        streamBubble.appendText(text);
+      },
+      onDone(data) {
+        if (data.message != null) state.conversation.push({ role: "assistant", content: data.message });
+        if (state.currentSessionId) updateSession(state.currentSessionId, { conversation: state.conversation, step: 3 });
+        updateTokenCount();
+        if (data.ready_to_write) return generateArticle();
+      },
+      onError(msg) { removeLoading(); showToast("エラー: " + msg, "error"); }
     });
-    const data = await res.json();
-    removeLoading();
-    addChatBubble("ai", data.message);
-    state.conversation.push({ role: "assistant", content: data.message });
-    if (data.ready_to_write) await generateArticle();
+    if (streamBubble) removeLoading();
   } catch (e) {
     removeLoading();
-    showToast("エラー: " + e.message);
+    showToast("エラー: " + e.message, "error");
   } finally {
     btn.disabled = false;
   }
@@ -2257,26 +2724,61 @@ async function generateArticle() {
   showLoading(output, "執筆中...", true);
 
   try {
-    const res = await fetch("/api/generate-article", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        style_guide: state.styleGuide,
-        title: state.title,
-        memo: state.memo,
-        conversation: state.conversation,
-        sources: state.sources,
-        model: getSelectedModel(),
-      }),
+    let accumulated = "";
+    await fetchSSE("/api/generate-article", {
+      style_guide: state.styleGuide,
+      title: state.title,
+      memo: state.memo,
+      conversation: state.conversation,
+      sources: state.sources,
+      model: getSelectedModel(),
+    }, {
+      onDelta(text) {
+        accumulated += text;
+        removeLoading();
+        output.textContent = accumulated;
+      },
+      onDone(data) {
+        if (data.article != null) {
+          state.articleHtml = data.article;
+          output.innerHTML = data.article;
+          updateArticleCharCount("article-output", "article-char-count");
+          if (state.currentSessionId) updateSession(state.currentSessionId, { step: 4, article_html: data.article });
+        }
+      },
+      onError(msg) { removeLoading(); showToast("エラー: " + msg, "error"); }
     });
-    const data = await res.json();
     removeLoading();
-    state.articleHtml = data.article;
-    output.innerHTML = data.article;
   } catch (e) {
     removeLoading();
-    showToast("エラー: " + e.message);
+    showToast("エラー: " + e.message, "error");
   }
+}
+
+function articleElToMarkdown(el) {
+  if (!el) return "";
+  let md = "";
+  function inlineToMd(node) {
+    let s = "";
+    for (const c of node.childNodes) {
+      if (c.nodeType === 3) s += c.textContent;
+      else if (c.tagName === "B") s += "**" + c.textContent + "**";
+      else if (c.tagName === "BR") s += "\n";
+      else s += inlineToMd(c);
+    }
+    return s;
+  }
+  for (const child of el.children) {
+    const tag = (child.tagName || "").toLowerCase();
+    const text = (child.innerText || "").trim();
+    if (tag === "h1") md += "# " + text + "\n\n";
+    else if (tag === "h2") md += "## " + text + "\n\n";
+    else if (tag === "hr") md += "\n---\n\n";
+    else if (tag === "p") md += inlineToMd(child).trim() + "\n\n";
+    else if (tag === "b") md += "**" + text + "**\n\n";
+    else md += (child.innerText || "").trim() + "\n\n";
+  }
+  return md.trim();
 }
 
 async function copyArticle() {
@@ -2295,10 +2797,31 @@ async function copyArticle() {
       }),
     ]);
     selection.removeAllRanges();
-    showToast("コピーしました。X記事エディタに貼り付けてください。");
+    showToast("コピーしました。X記事エディタに貼り付けてください。", "success");
   } catch (e) {
     document.execCommand("copy");
-    showToast("コピーしました");
+    showToast("コピーしました", "success");
+  }
+}
+
+async function copyArticleAsMarkdown() {
+  const output = document.getElementById("article-output");
+  const md = articleElToMarkdown(output);
+  try {
+    await navigator.clipboard.writeText(md);
+    showToast("Markdownをコピーしました", "success");
+  } catch (e) {
+    showToast("コピーに失敗しました", "error");
+  }
+}
+
+async function copyArticleAsText() {
+  const output = document.getElementById("article-output");
+  try {
+    await navigator.clipboard.writeText(output.innerText || "");
+    showToast("テキストをコピーしました", "success");
+  } catch (e) {
+    showToast("コピーに失敗しました", "error");
   }
 }
 
@@ -2355,9 +2878,10 @@ async function fetchUrl(n) {
 }
 
 function toggleLibSection(section) {
-  const id = section === 'styles' ? 'lib-styles' : 'lib-articles';
+  const idMap = { styles: 'lib-styles', articles: 'lib-articles', sessions: 'lib-sessions' };
+  const id = idMap[section] || section;
   const el = document.getElementById(id);
-  el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+  if (el) el.style.display = el.style.display === 'none' ? 'flex' : 'none';
 }
 
 // ── Article Management ──
@@ -2378,7 +2902,7 @@ function renderArticleList() {
   document.getElementById("article-count").textContent = (state.articles || []).length;
 
   if (!state.articles || state.articles.length === 0) {
-    list.innerHTML = '<div class="library-empty">まだありません</div>';
+    list.innerHTML = '<div class="library-empty"><div class="library-empty-title">記事がまだありません</div>記事を生成したあと「記事を保存」すると、ここに一覧表示されます。ドラッグでリファレンスに使えます。</div>';
     return;
   }
 
@@ -2423,11 +2947,11 @@ async function saveArticle() {
       }),
     });
     const data = await res.json();
-    if (data.error) { showToast(data.error); return; }
+    if (data.error) { showToast(data.error, "error"); return; }
     await loadArticles();
-    showToast(`「${title}」を保存しました`);
+    showToast(`「${title}」を保存しました`, "success");
   } catch (e) {
-    showToast("保存に失敗しました");
+    showToast("保存に失敗しました", "error");
   }
 }
 
@@ -2439,9 +2963,9 @@ async function deleteArticle(id) {
   try {
     await fetch(`/api/articles/${id}`, { method: "DELETE" });
     await loadArticles();
-    showToast("削除しました");
+    showToast("削除しました", "success");
   } catch (e) {
-    showToast("削除に失敗しました");
+    showToast("削除に失敗しました", "error");
   }
 }
 
@@ -2594,7 +3118,7 @@ async function addSourceUrl() {
     const res = await fetch("/api/extract-source", { method: "POST", body: formData });
     const data = await res.json();
 
-    if (data.error) { showToast(data.error); return; }
+    if (data.error) { showToast(data.error, "error"); return; }
     if (!data.text || data.text.length < 10) { showToast(data.message || "テキストを取得できませんでした"); return; }
 
     state.sources.push({
@@ -2604,10 +3128,11 @@ async function addSourceUrl() {
       url: url,
     });
     renderSources();
+    updateTokenCount();
     input.value = "";
     showToast(data.message);
   } catch (e) {
-    showToast("取得に失敗しました: " + e.message);
+    showToast("取得に失敗しました: " + e.message, "error");
   } finally {
     btn.disabled = false;
     btn.textContent = origText;
@@ -2627,7 +3152,7 @@ async function addSourcePdf(event) {
     const res = await fetch("/api/extract-source", { method: "POST", body: formData });
     const data = await res.json();
 
-    if (data.error) { showToast(data.error); return; }
+    if (data.error) { showToast(data.error, "error"); return; }
     if (!data.text || data.text.length < 10) { showToast(data.message || "テキストを抽出できませんでした"); return; }
 
     state.sources.push({
@@ -2636,9 +3161,10 @@ async function addSourcePdf(event) {
       text: data.text,
     });
     renderSources();
+    updateTokenCount();
     showToast(data.message);
   } catch (e) {
-    showToast("PDF読み込みに失敗しました: " + e.message);
+    showToast("PDF読み込みに失敗しました: " + e.message, "error");
   } finally {
     event.target.value = "";
   }
@@ -2647,6 +3173,7 @@ async function addSourcePdf(event) {
 function removeSource(index) {
   state.sources.splice(index, 1);
   renderSources();
+  updateTokenCount();
 }
 
 function previewSource(index) {
@@ -2663,7 +3190,10 @@ function previewSource(index) {
 
 // ── Modal ──
 
+let modalPreviousActiveElement = null;
+
 function openModal(title, bodyHtml, footerHtml, showEditBar = false) {
+  modalPreviousActiveElement = document.activeElement;
   document.getElementById("modal-title").textContent = title;
   document.getElementById("modal-body").innerHTML = bodyHtml;
   document.getElementById("modal-footer").innerHTML = footerHtml || "";
@@ -2673,16 +3203,82 @@ function openModal(title, bodyHtml, footerHtml, showEditBar = false) {
   if (!showEditBar) modalEditingArticleId = null;
   document.getElementById("modal-overlay").classList.add("show");
   document.body.style.overflow = "hidden";
+  setTimeout(() => {
+    const focusables = document.querySelectorAll("#modal-overlay .modal button, #modal-overlay .modal [href], #modal-overlay .modal input:not([type=hidden]), #modal-overlay .modal textarea, #modal-overlay .modal select");
+    if (focusables.length) focusables[0].focus();
+    document.getElementById("modal-overlay").setAttribute("data-focus-trap", "1");
+  }, 50);
 }
 
 function closeModal(e) {
   if (e && e.target && e.target !== document.getElementById("modal-overlay")) return;
   document.getElementById("modal-overlay").classList.remove("show");
+  document.getElementById("modal-overlay").removeAttribute("data-focus-trap");
   document.body.style.overflow = "";
+  if (modalPreviousActiveElement && typeof modalPreviousActiveElement.focus === "function") {
+    modalPreviousActiveElement.focus();
+  }
+}
+
+document.getElementById("modal-overlay").addEventListener("keydown", function(e) {
+  if (this.getAttribute("data-focus-trap") !== "1" || !this.classList.contains("show")) return;
+  if (e.key !== "Tab") return;
+  const focusables = Array.from(this.querySelectorAll(".modal button, .modal [href], .modal input:not([type=hidden]), .modal textarea, .modal select")).filter(el => !el.disabled && el.tabIndex !== -1);
+  if (focusables.length === 0) return;
+  const first = focusables[0], last = focusables[focusables.length - 1];
+  if (e.shiftKey) {
+    if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+  } else {
+    if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+
+function showShortcutModal() {
+  const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  const mod = isMac ? "⌘" : "Ctrl";
+  const body = `
+    <div class="shortcut-list">
+      <div class="shortcut-row"><kbd>${mod} + Enter</kbd><span>チャット送信</span></div>
+      <div class="shortcut-row"><kbd>${mod} + S</kbd><span>記事を保存 / 上書き保存</span></div>
+      <div class="shortcut-row"><kbd>Esc</kbd><span>モーダルを閉じる</span></div>
+      <div class="shortcut-row"><kbd>?</kbd> または <kbd>${mod} + /</kbd><span>このショートカット一覧</span></div>
+    </div>
+  `;
+  openModal("キーボードショートカット", body, `<button class="btn btn-primary" onclick="closeModal()">閉じる</button>`, false);
 }
 
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") closeModal();
+  if (e.key === "Escape") { closeModal(); return; }
+  const inInput = /INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName);
+  if (e.key === "?" && !e.ctrlKey && !e.metaKey && !inInput) {
+    e.preventDefault();
+    showShortcutModal();
+    return;
+  }
+  if ((e.key === "/" || e.key === ":") && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    showShortcutModal();
+    return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+    e.preventDefault();
+    if (document.getElementById("modal-overlay").classList.contains("show")) {
+      if (modalEditingArticleId) overwriteArticle();
+    } else {
+      const step4 = document.getElementById("step4");
+      if (step4 && step4.classList.contains("visible") && document.getElementById("article-output").innerHTML.trim()) {
+        saveArticle();
+      } else {
+        const rwStep3 = document.getElementById("rw-step3");
+        if (rwStep3 && rwStep3.classList.contains("visible") && document.getElementById("rw-article-output").innerHTML.trim()) {
+          saveRwArticle();
+        } else {
+          showToast("保存できる記事がありません", "info");
+        }
+      }
+    }
+    return;
+  }
 });
 
 let modalEditingArticleId = null;
@@ -2692,10 +3288,39 @@ function previewArticle(id) {
   if (!art) return;
 
   modalEditingArticleId = id;
+  const versions = art.versions || [];
 
-  const bodyHtml = art.html
+  let versionPanel = "";
+  if (versions.length > 0) {
+    versionPanel = `
+      <div class="version-panel">
+        <div class="version-panel-title" onclick="document.getElementById('version-list-wrap').classList.toggle('open')">バージョン履歴 (${versions.length})</div>
+        <div id="version-list-wrap" class="version-list-wrap">
+          ${versions.map((v, i) => {
+            const d = v.created_at ? new Date(v.created_at).toLocaleString("ja-JP") : `#${i + 1}`;
+            return `<div class="version-item">
+              <span class="version-date">${escapeHtml(d)}</span>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="restoreArticleVersion('${art.id}', ${i})">復元</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="showVersionDiff('${art.id}', ${i}, -1)">比較</button>
+            </div>`;
+          }).join("")}
+          <div class="version-diff-area" id="version-diff-area" style="display:none;">
+            <div class="version-diff-header">
+              <span>左: 選択バージョン / 右: 現在</span>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('version-diff-area').style.display='none'">閉じる</button>
+            </div>
+            <div class="version-diff-columns">
+              <pre id="version-diff-left" class="version-diff-pre"></pre>
+              <pre id="version-diff-right" class="version-diff-pre"></pre>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const bodyHtml = versionPanel + (art.html
     ? `<div class="modal-body-article" id="modal-article-content">${art.html}</div>`
-    : `<div class="modal-body-article" id="modal-article-content"><p>${escapeHtml(art.text || "内容なし")}</p></div>`;
+    : `<div class="modal-body-article" id="modal-article-content"><p>${escapeHtml(art.text || "内容なし")}</p></div>`);
 
   const footerHtml = `
     <button class="btn btn-primary btn-sm" onclick="overwriteArticle()">上書き保存</button>
@@ -2706,6 +3331,31 @@ function previewArticle(id) {
 
   openModal(art.title || "無題", bodyHtml, footerHtml, true);
   setupModalSelectionListener();
+}
+
+function restoreArticleVersion(articleId, versionIndex) {
+  const art = (state.articles || []).find(a => a.id === articleId);
+  if (!art || !art.versions || !art.versions[versionIndex]) return;
+  const v = art.versions[versionIndex];
+  const contentEl = document.getElementById("modal-article-content");
+  if (contentEl) contentEl.innerHTML = v.html || "";
+  showToast("このバージョンを表示しました。上書き保存で反映できます。");
+}
+
+function showVersionDiff(articleId, versionIndex, currentIsRight) {
+  const art = (state.articles || []).find(a => a.id === articleId);
+  if (!art || !art.versions || !art.versions[versionIndex]) return;
+  const leftText = (art.versions[versionIndex].text || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const contentEl = document.getElementById("modal-article-content");
+  const rightText = (contentEl ? contentEl.innerText || "" : art.text || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const diffArea = document.getElementById("version-diff-area");
+  const leftPre = document.getElementById("version-diff-left");
+  const rightPre = document.getElementById("version-diff-right");
+  if (diffArea && leftPre && rightPre) {
+    leftPre.textContent = art.versions[versionIndex].text || "";
+    rightPre.textContent = contentEl ? contentEl.innerText || "" : art.text || "";
+    diffArea.style.display = "block";
+  }
 }
 
 function previewStyle(id) {
@@ -2773,6 +3423,7 @@ let rwState = {
   conversation: [],
   articleHtml: "",
   sources: [],
+  currentSessionId: null,
 };
 
 function goToRwStep(n) {
@@ -2783,6 +3434,11 @@ function goToRwStep(n) {
     if (i + 1 < n) ind.classList.add("done");
     if (i + 1 === n) ind.classList.add("active");
   });
+  setTimeout(updateTokenCount, 0);
+  setTimeout(() => {
+    const el = n === 1 ? document.getElementById("rw-original") : n === 2 ? document.getElementById("rw-chat-input") : document.getElementById("rw-edit-full-input");
+    if (el) el.focus();
+  }, 100);
 }
 
 function renderRwStyleList() {
@@ -2791,7 +3447,7 @@ function renderRwStyleList() {
   countEl.textContent = state.contexts.length;
 
   if (state.contexts.length === 0) {
-    list.innerHTML = '<div class="library-empty">新規作成モードでスタイルを作成してください</div>';
+    list.innerHTML = '<div class="library-empty"><div class="library-empty-title">スタイルがありません</div>新規作成モードでリファレンスからスタイルを作成し、保存してください。</div>';
     return;
   }
 
@@ -2862,7 +3518,7 @@ async function fetchRewriteUrl() {
     const res = await fetch("/api/extract-source", { method: "POST", body: formData });
     const data = await res.json();
 
-    if (data.error) { showToast(data.error); return; }
+    if (data.error) { showToast(data.error, "error"); return; }
 
     msgEl.style.display = "block";
     msgEl.textContent = data.message || "";
@@ -2899,27 +3555,34 @@ async function startRewriteInterview() {
   document.getElementById("rw-chat-area").innerHTML = "";
   goToRwStep(2);
 
+  await createSession("rewrite", { step: 2, style_guide: rwState.styleGuide, context_id: rwState.activeContextId, original_article: rwState.originalArticle, user_angle: rwState.userAngle, original_title: rwState.originalTitle || "", conversation: [] });
+
   const chatArea = document.getElementById("rw-chat-area");
   showLoading(chatArea, "元記事を分析して質問を考えています...");
 
   try {
-    const res = await fetch("/api/rewrite/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        style_guide: rwState.styleGuide,
-        original_article: rwState.originalArticle,
-        user_angle: rwState.userAngle,
-        model: getSelectedModel(),
-      }),
+    let streamBubble = null;
+    await fetchSSE("/api/rewrite/start", {
+      style_guide: rwState.styleGuide,
+      original_article: rwState.originalArticle,
+      user_angle: rwState.userAngle,
+      model: getSelectedModel(),
+    }, {
+      onDelta(text) {
+        if (!streamBubble) { removeLoading(); streamBubble = addChatBubbleStreaming("rw-chat-area", "ai"); }
+        streamBubble.appendText(text);
+      },
+      onDone(data) {
+        if (data.message != null) rwState.conversation.push({ role: "assistant", content: data.message });
+        if (rwState.currentSessionId) updateSession(rwState.currentSessionId, { conversation: rwState.conversation, step: 2 });
+        updateTokenCount();
+      },
+      onError(msg) { removeLoading(); showToast("エラー: " + msg, "error"); }
     });
-    const data = await res.json();
-    removeLoading();
-    addRwChatBubble("ai", data.message);
-    rwState.conversation.push({ role: "assistant", content: data.message });
+    if (streamBubble) removeLoading();
   } catch (e) {
     removeLoading();
-    showToast("エラー: " + e.message);
+    showToast("エラー: " + e.message, "error");
   }
 }
 
@@ -2954,25 +3617,30 @@ async function sendRwReply() {
   showLoading(chatArea, "考えています...");
 
   try {
-    const res = await fetch("/api/rewrite/continue", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        style_guide: rwState.styleGuide,
-        original_article: rwState.originalArticle,
-        user_angle: rwState.userAngle,
-        conversation: rwState.conversation,
-        model: getSelectedModel(),
-      }),
+    let streamBubble = null;
+    await fetchSSE("/api/rewrite/continue", {
+      style_guide: rwState.styleGuide,
+      original_article: rwState.originalArticle,
+      user_angle: rwState.userAngle,
+      conversation: rwState.conversation,
+      model: getSelectedModel(),
+    }, {
+      onDelta(text) {
+        if (!streamBubble) { removeLoading(); streamBubble = addChatBubbleStreaming("rw-chat-area", "ai"); }
+        streamBubble.appendText(text);
+      },
+      onDone(data) {
+        if (data.message != null) rwState.conversation.push({ role: "assistant", content: data.message });
+        if (rwState.currentSessionId) updateSession(rwState.currentSessionId, { conversation: rwState.conversation, step: 2 });
+        updateTokenCount();
+        if (data.ready_to_write) return generateRwArticle();
+      },
+      onError(msg) { removeLoading(); showToast("エラー: " + msg, "error"); }
     });
-    const data = await res.json();
-    removeLoading();
-    addRwChatBubble("ai", data.message);
-    rwState.conversation.push({ role: "assistant", content: data.message });
-    if (data.ready_to_write) await generateRwArticle();
+    if (streamBubble) removeLoading();
   } catch (e) {
     removeLoading();
-    showToast("エラー: " + e.message);
+    showToast("エラー: " + e.message, "error");
   } finally {
     btn.disabled = false;
   }
@@ -2989,25 +3657,34 @@ async function generateRwArticle() {
   showLoading(output, "執筆中...", true);
 
   try {
-    const res = await fetch("/api/rewrite/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        style_guide: rwState.styleGuide,
-        original_article: rwState.originalArticle,
-        user_angle: rwState.userAngle,
-        conversation: rwState.conversation,
-        sources: rwState.sources,
-        model: getSelectedModel(),
-      }),
+    let accumulated = "";
+    await fetchSSE("/api/rewrite/generate", {
+      style_guide: rwState.styleGuide,
+      original_article: rwState.originalArticle,
+      user_angle: rwState.userAngle,
+      conversation: rwState.conversation,
+      sources: rwState.sources,
+      model: getSelectedModel(),
+    }, {
+      onDelta(text) {
+        accumulated += text;
+        removeLoading();
+        output.textContent = accumulated;
+      },
+      onDone(data) {
+        if (data.article != null) {
+          rwState.articleHtml = data.article;
+          output.innerHTML = data.article;
+          updateArticleCharCount("rw-article-output", "rw-article-char-count");
+          if (rwState.currentSessionId) updateSession(rwState.currentSessionId, { step: 3, article_html: data.article });
+        }
+      },
+      onError(msg) { removeLoading(); showToast("エラー: " + msg, "error"); }
     });
-    const data = await res.json();
     removeLoading();
-    rwState.articleHtml = data.article;
-    output.innerHTML = data.article;
   } catch (e) {
     removeLoading();
-    showToast("エラー: " + e.message);
+    showToast("エラー: " + e.message, "error");
   }
 }
 
@@ -3026,10 +3703,31 @@ async function copyRwArticle() {
       }),
     ]);
     selection.removeAllRanges();
-    showToast("コピーしました。X記事エディタに貼り付けてください。");
+    showToast("コピーしました。X記事エディタに貼り付けてください。", "success");
   } catch (e) {
     document.execCommand("copy");
-    showToast("コピーしました");
+    showToast("コピーしました", "success");
+  }
+}
+
+async function copyRwArticleAsMarkdown() {
+  const output = document.getElementById("rw-article-output");
+  const md = articleElToMarkdown(output);
+  try {
+    await navigator.clipboard.writeText(md);
+    showToast("Markdownをコピーしました", "success");
+  } catch (e) {
+    showToast("コピーに失敗しました", "error");
+  }
+}
+
+async function copyRwArticleAsText() {
+  const output = document.getElementById("rw-article-output");
+  try {
+    await navigator.clipboard.writeText(output.innerText || "");
+    showToast("テキストをコピーしました", "success");
+  } catch (e) {
+    showToast("コピーに失敗しました", "error");
   }
 }
 
@@ -3053,11 +3751,11 @@ async function saveRwArticle() {
       }),
     });
     const data = await res.json();
-    if (data.error) { showToast(data.error); return; }
+    if (data.error) { showToast(data.error, "error"); return; }
     await loadArticles();
-    showToast(`「${title}」を保存しました`);
+    showToast(`「${title}」を保存しました`, "success");
   } catch (e) {
-    showToast("保存に失敗しました");
+    showToast("保存に失敗しました", "error");
   }
 }
 
@@ -3147,7 +3845,7 @@ async function submitEditSelection(mode) {
   if (!instruction || !editSelectedText) return;
 
   popoverEl.classList.remove("show");
-  showLoading("修正中…");
+  showLoading(outputEl, "修正中…");
 
   const sg = mode === "modal" ? {} : (mode === "create" ? state.styleGuide : rwState.styleGuide);
 
@@ -3160,17 +3858,19 @@ async function submitEditSelection(mode) {
         selected_text: editSelectedText,
         instruction: instruction,
         style_guide: sg,
-        model: state.selectedModel,
+        model: getSelectedModel(),
       }),
     });
     const data = await res.json();
     hideLoading();
-    if (data.error) { showToast(data.error); return; }
+    if (data.error) { showToast(data.error, "error"); return; }
     outputEl.innerHTML = data.article;
-    showToast("修正を反映しました");
+    if (mode === "create") updateArticleCharCount("article-output", "article-char-count");
+    if (mode === "rewrite") updateArticleCharCount("rw-article-output", "rw-article-char-count");
+    showToast("修正を反映しました", "success");
   } catch (e) {
     hideLoading();
-    showToast("修正に失敗しました");
+    showToast("修正に失敗しました", "error");
   }
 }
 
@@ -3187,7 +3887,7 @@ async function submitEditFull(mode) {
 
   if (!instruction) return;
 
-  showLoading("修正中…");
+  showLoading(outputEl, "修正中…");
 
   const sg = mode === "modal" ? {} : (mode === "create" ? state.styleGuide : rwState.styleGuide);
 
@@ -3199,18 +3899,20 @@ async function submitEditFull(mode) {
         full_html: outputEl.innerHTML,
         instruction: instruction,
         style_guide: sg,
-        model: state.selectedModel,
+        model: getSelectedModel(),
       }),
     });
     const data = await res.json();
     hideLoading();
-    if (data.error) { showToast(data.error); return; }
+    if (data.error) { showToast(data.error, "error"); return; }
     outputEl.innerHTML = data.article;
+    if (mode === "create") updateArticleCharCount("article-output", "article-char-count");
+    if (mode === "rewrite") updateArticleCharCount("rw-article-output", "rw-article-char-count");
     inputEl.value = "";
-    showToast("修正を反映しました");
+    showToast("修正を反映しました", "success");
   } catch (e) {
     hideLoading();
-    showToast("修正に失敗しました");
+    showToast("修正に失敗しました", "error");
   }
 }
 
@@ -3292,11 +3994,11 @@ async function overwriteArticle() {
       }),
     });
     const data = await res.json();
-    if (data.error) { showToast(data.error); return; }
+    if (data.error) { showToast(data.error, "error"); return; }
     await loadArticles();
-    showToast("上書き保存しました");
+    showToast("上書き保存しました", "success");
   } catch (e) {
-    showToast("保存に失敗しました");
+    showToast("保存に失敗しました", "error");
   }
 }
 
@@ -3323,18 +4025,40 @@ async function saveAsNewArticle() {
       }),
     });
     const data = await res.json();
-    if (data.error) { showToast(data.error); return; }
+    if (data.error) { showToast(data.error, "error"); return; }
     await loadArticles();
-    showToast(`「${title}」を新規保存しました`);
+    showToast(`「${title}」を新規保存しました`, "success");
   } catch (e) {
-    showToast("保存に失敗しました");
+    showToast("保存に失敗しました", "error");
   }
 }
+
+// ── Theme (dark mode) ──
+function initTheme() {
+  const saved = localStorage.getItem("ghost-writer-theme");
+  const preferDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const dark = saved === "dark" || (saved !== "light" && preferDark);
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  const btn = document.getElementById("theme-toggle");
+  if (btn) btn.textContent = dark ? "☀" : "🌙";
+}
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const next = isDark ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("ghost-writer-theme", next);
+  const btn = document.getElementById("theme-toggle");
+  if (btn) btn.textContent = next === "dark" ? "☀" : "🌙";
+  showToast(next === "dark" ? "ダークモードに切り替えました" : "ライトモードに切り替えました", "success", 2000);
+}
+initTheme();
 
 // ── Init ──
 loadModels();
 loadContexts();
 loadArticles();
+loadSessions();
+loadPromptTemplates();
 renderSources();
 </script>
 </body>
