@@ -2890,7 +2890,7 @@ let stateSessions = [];
 
 async function loadSessions() {
   try {
-    const res = await fetch("/api/sessions");
+    const res = await authFetch("/api/sessions");
     const data = await res.json();
     stateSessions = data.sessions || [];
     renderSessionList();
@@ -2902,7 +2902,7 @@ async function loadSessions() {
 let promptTemplates = [];
 async function loadPromptTemplates() {
   try {
-    const res = await fetch("/api/prompt-templates");
+    const res = await authFetch("/api/prompt-templates");
     const data = await res.json();
     promptTemplates = data.templates || [];
     renderPromptTemplateSelect();
@@ -2935,7 +2935,7 @@ async function saveAsPromptTemplate() {
   const title = document.getElementById("article-title").value || "";
   const memo = document.getElementById("article-memo").value || "";
   try {
-    const res = await fetch("/api/prompt-templates", {
+    const res = await authFetch("/api/prompt-templates", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: name.trim(), title, memo }),
@@ -2955,7 +2955,7 @@ let ctaEditId = null;
 
 async function loadCtaTemplates() {
   try {
-    const res = await fetch("/api/cta-templates");
+    const res = await authFetch("/api/cta-templates");
     const data = await res.json();
     ctaTemplates = data.templates || [];
     renderCtaList();
@@ -3020,7 +3020,7 @@ async function saveCtaFromModal() {
   if (!name) { showToast("名前を入力してください", "error"); return; }
   try {
     if (ctaEditId) {
-      const res = await fetch("/api/cta-templates/" + ctaEditId, {
+      const res = await authFetch("/api/cta-templates/" + ctaEditId, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, content }),
@@ -3029,7 +3029,7 @@ async function saveCtaFromModal() {
       if (data.error) { showToast(data.error, "error"); return; }
       showToast("CTAを更新しました", "success");
     } else {
-      const res = await fetch("/api/cta-templates", {
+      const res = await authFetch("/api/cta-templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, content }),
@@ -3049,7 +3049,7 @@ async function saveCtaFromModal() {
 async function deleteCtaTemplate(id) {
   if (!confirm("このCTAを削除しますか？")) return;
   try {
-    await fetch("/api/cta-templates/" + id, { method: "DELETE" });
+    await authFetch("/api/cta-templates/" + id, { method: "DELETE" });
     await loadCtaTemplates();
     showToast("CTAを削除しました", "success");
   } catch (e) {
@@ -3105,7 +3105,7 @@ function renderSessionList() {
 async function createSession(mode, data) {
   try {
     const payload = { mode, step: data.step ?? 1, title: data.title ?? "", memo: data.memo ?? "", conversation: data.conversation ?? [], style_guide: data.style_guide ?? null, context_id: data.context_id ?? null, sources: data.sources ?? [], article_html: data.article_html ?? "", original_article: data.original_article ?? "", user_angle: data.user_angle ?? "", original_title: data.original_title ?? "" };
-    const res = await fetch("/api/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const res = await authFetch("/api/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const json = await res.json();
     if (json.session) {
       if (mode === "create") state.currentSessionId = json.session.id;
@@ -3120,14 +3120,14 @@ async function createSession(mode, data) {
 async function updateSession(id, data) {
   if (!id) return;
   try {
-    await fetch(`/api/sessions/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    await authFetch(`/api/sessions/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
     await loadSessions();
   } catch (e) { console.error("updateSession", e); }
 }
 
 async function deleteSession(id) {
   try {
-    await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+    await authFetch(`/api/sessions/${id}`, { method: "DELETE" });
     if (state.currentSessionId === id) state.currentSessionId = null;
     if (rwState.currentSessionId === id) rwState.currentSessionId = null;
     await loadSessions();
@@ -3137,7 +3137,7 @@ async function deleteSession(id) {
 
 async function resumeSession(id) {
   try {
-    const res = await fetch(`/api/sessions/${id}`);
+    const res = await authFetch(`/api/sessions/${id}`);
     const data = await res.json();
     if (!data.session) { showToast("セッションを読み込めませんでした", "error"); return; }
     const s = data.session;
@@ -4044,7 +4044,7 @@ document.addEventListener("keydown", e => {
     } else {
       const step4 = document.getElementById("step4");
       if (step4 && step4.classList.contains("visible") && document.getElementById("article-output").innerHTML.trim()) {
-        saveArticle();
+        saveArticleManual();
       } else {
         const rwStep3 = document.getElementById("rw-step3");
         if (rwStep3 && rwStep3.classList.contains("visible") && document.getElementById("rw-article-output").innerHTML.trim()) {

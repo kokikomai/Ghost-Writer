@@ -1051,6 +1051,7 @@ def delete_article(article_id):
 @require_auth
 def list_sessions():
     sessions = load_sessions()
+    sessions = [s for s in sessions if s.get("user_id") == g.user_id]
     sessions = sorted(sessions, key=lambda s: s.get("updated_at", ""), reverse=True)
     return jsonify({"sessions": sessions})
 
@@ -1061,6 +1062,7 @@ def create_session():
     data = request.json or {}
     session = {
         "id": str(uuid.uuid4()),
+        "user_id": g.user_id,
         "mode": data.get("mode", "create"),
         "step": data.get("step", 1),
         "title": data.get("title", ""),
@@ -1087,7 +1089,7 @@ def create_session():
 def get_session(session_id):
     sessions = load_sessions()
     for s in sessions:
-        if s["id"] == session_id:
+        if s["id"] == session_id and s.get("user_id") == g.user_id:
             return jsonify({"session": s})
     return jsonify({"error": "セッションが見つかりません"}), 404
 
@@ -1098,7 +1100,7 @@ def update_session(session_id):
     data = request.json or {}
     sessions = load_sessions()
     for s in sessions:
-        if s["id"] == session_id:
+        if s["id"] == session_id and s.get("user_id") == g.user_id:
             if "step" in data:
                 s["step"] = data["step"]
             if "title" in data:
@@ -1131,7 +1133,7 @@ def update_session(session_id):
 @require_auth
 def delete_session(session_id):
     sessions = load_sessions()
-    sessions = [s for s in sessions if s["id"] != session_id]
+    sessions = [s for s in sessions if not (s["id"] == session_id and s.get("user_id") == g.user_id)]
     save_sessions(sessions)
     return jsonify({"success": True})
 
@@ -1140,6 +1142,7 @@ def delete_session(session_id):
 @require_auth
 def list_prompt_templates():
     templates = load_prompt_templates()
+    templates = [t for t in templates if t.get("user_id") == g.user_id]
     return jsonify({"templates": templates})
 
 
@@ -1154,6 +1157,7 @@ def create_prompt_template():
         return jsonify({"error": "テンプレート名を入力してください"}), 400
     template = {
         "id": str(uuid.uuid4()),
+        "user_id": g.user_id,
         "name": name,
         "title": title,
         "memo": memo,
@@ -1171,7 +1175,7 @@ def update_prompt_template(template_id):
     data = request.json or {}
     templates = load_prompt_templates()
     for t in templates:
-        if t["id"] == template_id:
+        if t["id"] == template_id and t.get("user_id") == g.user_id:
             if "name" in data:
                 t["name"] = (data["name"] or "").strip()
             if "title" in data:
@@ -1187,7 +1191,10 @@ def update_prompt_template(template_id):
 @require_auth
 def delete_prompt_template(template_id):
     templates = load_prompt_templates()
-    templates = [t for t in templates if t["id"] != template_id]
+    original_len = len(templates)
+    templates = [t for t in templates if not (t["id"] == template_id and t.get("user_id") == g.user_id)]
+    if len(templates) == original_len:
+        return jsonify({"error": "テンプレートが見つかりません"}), 404
     save_prompt_templates(templates)
     return jsonify({"success": True})
 
@@ -1196,7 +1203,8 @@ def delete_prompt_template(template_id):
 @require_auth
 def list_cta_templates():
     templates = load_cta_templates()
-    return jsonify({"templates": templates})
+    user_templates = [t for t in templates if t.get("user_id") == g.user_id]
+    return jsonify({"templates": user_templates})
 
 
 @app.route("/api/cta-templates", methods=["POST"])
@@ -1209,6 +1217,7 @@ def create_cta_template():
         return jsonify({"error": "CTA名を入力してください"}), 400
     template = {
         "id": str(uuid.uuid4()),
+        "user_id": g.user_id,
         "name": name,
         "content": content,
         "created_at": datetime.now().isoformat(),
@@ -1225,7 +1234,7 @@ def update_cta_template(template_id):
     data = request.json or {}
     templates = load_cta_templates()
     for t in templates:
-        if t["id"] == template_id:
+        if t["id"] == template_id and t.get("user_id") == g.user_id:
             if "name" in data:
                 t["name"] = (data["name"] or "").strip()
             if "content" in data:
@@ -1239,7 +1248,10 @@ def update_cta_template(template_id):
 @require_auth
 def delete_cta_template(template_id):
     templates = load_cta_templates()
-    templates = [t for t in templates if t["id"] != template_id]
+    original_len = len(templates)
+    templates = [t for t in templates if not (t["id"] == template_id and t.get("user_id") == g.user_id)]
+    if len(templates) == original_len:
+        return jsonify({"error": "CTAテンプレートが見つかりません"}), 404
     save_cta_templates(templates)
     return jsonify({"success": True})
 
