@@ -4,12 +4,16 @@ import json
 import uuid
 import tempfile
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
+from functools import wraps
+from flask import Flask, request, jsonify, send_from_directory, g, Response, stream_with_context
 from flask_cors import CORS
 import anthropic
 import requests as http_requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from supabase import create_client, Client
+import jwt as pyjwt
+from jwt import PyJWKClient
 from scraper import fetch_sync, is_youtube_url
 
 load_dotenv()
@@ -27,10 +31,14 @@ AVAILABLE_MODELS = [
     {"id": "claude-haiku-4-20250514", "name": "Claude Haiku 4", "desc": "最速・低コスト"},
 ]
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+# Sessions / Templates / CTA use local JSON files (/tmp for Vercel compatibility)
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(tempfile.gettempdir(), "ghost-writer-data"))
 os.makedirs(DATA_DIR, exist_ok=True)
-CONTEXTS_FILE = os.path.join(DATA_DIR, "contexts.json")
-ARTICLES_FILE = os.path.join(DATA_DIR, "articles.json")
 SESSIONS_FILE = os.path.join(DATA_DIR, "sessions.json")
 PROMPT_TEMPLATES_FILE = os.path.join(DATA_DIR, "prompt_templates.json")
 CTA_TEMPLATES_FILE = os.path.join(DATA_DIR, "cta_templates.json")
@@ -50,20 +58,31 @@ def save_json(path, data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def load_contexts():
-    return load_json(CONTEXTS_FILE)
+_jwks_client = PyJWKClient(f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json", cache_keys=True)
 
 
-def save_contexts(contexts):
-    save_json(CONTEXTS_FILE, contexts)
-
-
-def load_articles():
-    return load_json(ARTICLES_FILE)
-
-
-def save_articles(articles):
-    save_json(ARTICLES_FILE, articles)
+def require_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"error": "認証が必要です"}), 401
+        token = auth_header.split(" ", 1)[1]
+        try:
+            signing_key = _jwks_client.get_signing_key_from_jwt(token)
+            payload = pyjwt.decode(
+                token,
+                signing_key.key,
+                algorithms=["ES256"],
+                audience="authenticated",
+            )
+            g.user_id = payload["sub"]
+        except pyjwt.ExpiredSignatureError:
+            return jsonify({"error": "トークンの有効期限が切れています"}), 401
+        except pyjwt.InvalidTokenError:
+            return jsonify({"error": "無効なトークンです"}), 401
+        return f(*args, **kwargs)
+    return decorated
 
 
 def load_sessions():
@@ -407,7 +426,9 @@ HTMLタグだけを出力し、```html```などのコードブロック記法で
 
 @app.route("/")
 def index():
-    return send_from_directory("static", "index.html")
+    resp = send_from_directory("static", "index.html")
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return resp
 
 
 @app.route("/api/models", methods=["GET"])
@@ -416,6 +437,7 @@ def list_models():
 
 
 @app.route("/api/analyze-style", methods=["POST"])
+@require_auth
 def analyze_style():
     data = request.json
     references = data.get("references", [])
@@ -437,6 +459,7 @@ def _sse_yield(obj):
 
 
 @app.route("/api/interview/start", methods=["POST"])
+@require_auth
 def start_interview():
     data = request.json or {}
     style_guide = data.get("style_guide", {})
@@ -470,6 +493,7 @@ def start_interview():
 
 
 @app.route("/api/interview/continue", methods=["POST"])
+@require_auth
 def continue_interview():
     data = request.json or {}
     style_guide = data.get("style_guide", {})
@@ -506,6 +530,7 @@ def continue_interview():
 
 
 @app.route("/api/generate-article", methods=["POST"])
+@require_auth
 def generate_article():
     data = request.json or {}
     style_guide = data.get("style_guide", {})
@@ -540,12 +565,19 @@ def generate_article():
 
 
 @app.route("/api/contexts", methods=["GET"])
+@require_auth
 def list_contexts():
-    contexts = load_contexts()
+    data = supabase.table("contexts").select("*").eq("user_id", g.user_id).order("created_at", desc=True).execute()
+    # Map DB column names to frontend expected names
+    contexts = []
+    for row in data.data:
+        row["references"] = row.pop("reference_texts", [])
+        contexts.append(row)
     return jsonify({"contexts": contexts})
 
 
 @app.route("/api/contexts", methods=["POST"])
+@require_auth
 def create_context():
     data = request.json
     name = data.get("name", "").strip()
@@ -557,98 +589,102 @@ def create_context():
     if not references or not any(r.strip() for r in references):
         return jsonify({"error": "リファレンス記事を1つ以上入力してください"}), 400
 
-    context = {
-        "id": str(uuid.uuid4()),
+    result = supabase.table("contexts").insert({
+        "user_id": g.user_id,
         "name": name,
-        "references": references,
+        "reference_texts": references,
         "style_guide": style_guide,
-        "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat(),
-    }
+    }).execute()
 
-    contexts = load_contexts()
-    contexts.insert(0, context)
-    save_contexts(contexts)
-
-    return jsonify({"context": context})
+    ctx = result.data[0]
+    ctx["references"] = ctx.pop("reference_texts", [])
+    return jsonify({"context": ctx})
 
 
 @app.route("/api/contexts/<context_id>", methods=["PUT"])
+@require_auth
 def update_context(context_id):
     data = request.json
-    contexts = load_contexts()
 
-    target = None
-    for ctx in contexts:
-        if ctx["id"] == context_id:
-            target = ctx
-            break
+    update_data = {}
+    if "name" in data:
+        update_data["name"] = data["name"]
+    if "references" in data:
+        update_data["reference_texts"] = data["references"]
+    if "style_guide" in data:
+        update_data["style_guide"] = data["style_guide"]
 
-    if not target:
+    result = supabase.table("contexts").update(update_data).eq("id", context_id).eq("user_id", g.user_id).execute()
+
+    if not result.data:
         return jsonify({"error": "コンテキストが見つかりません"}), 404
 
-    if "name" in data:
-        target["name"] = data["name"]
-    if "references" in data:
-        target["references"] = data["references"]
-    if "style_guide" in data:
-        target["style_guide"] = data["style_guide"]
-
-    target["updated_at"] = datetime.now().isoformat()
-    save_contexts(contexts)
-
-    return jsonify({"context": target})
+    ctx = result.data[0]
+    ctx["references"] = ctx.pop("reference_texts", [])
+    return jsonify({"context": ctx})
 
 
 @app.route("/api/contexts/<context_id>/reference/<int:ref_index>", methods=["PUT"])
+@require_auth
 def update_single_reference(context_id, ref_index):
-    """個別のリファレンス記事を上書きする"""
     data = request.json
     new_text = data.get("text", "")
 
-    contexts = load_contexts()
-    target = None
-    for ctx in contexts:
-        if ctx["id"] == context_id:
-            target = ctx
-            break
+    result = supabase.table("contexts").select("*").eq("id", context_id).eq("user_id", g.user_id).execute()
 
-    if not target:
+    if not result.data:
         return jsonify({"error": "コンテキストが見つかりません"}), 404
 
-    refs = target["references"]
+    context = result.data[0]
+    refs = context.get("reference_texts", [])
     while len(refs) <= ref_index:
         refs.append("")
     refs[ref_index] = new_text
 
-    target["updated_at"] = datetime.now().isoformat()
-    target["style_guide"] = None
-    save_contexts(contexts)
+    update_result = supabase.table("contexts").update({
+        "reference_texts": refs,
+        "style_guide": None,
+    }).eq("id", context_id).eq("user_id", g.user_id).execute()
 
-    return jsonify({"context": target})
+    ctx = update_result.data[0]
+    ctx["references"] = ctx.pop("reference_texts", [])
+    return jsonify({"context": ctx})
 
 
 @app.route("/api/contexts/<context_id>", methods=["DELETE"])
+@require_auth
 def delete_context(context_id):
-    contexts = load_contexts()
-    contexts = [c for c in contexts if c["id"] != context_id]
-    save_contexts(contexts)
+    supabase.table("contexts").delete().eq("id", context_id).eq("user_id", g.user_id).execute()
     return jsonify({"success": True})
 
 
 @app.route("/api/fetch-url", methods=["POST"])
+@require_auth
 def fetch_url():
     """URLからAPI経由でテキストを取得する"""
+    import time as _time
     data = request.json
     url = data.get("url", "").strip()
 
     if not url:
         return jsonify({"error": "URLを入力してください"}), 400
 
+    if is_youtube_url(url):
+        return jsonify({
+            "text": "",
+            "source": "error",
+            "message": "YouTube URLはリファレンス記事には使用できません。YouTube字幕は「参考記事」のURL追加からご利用ください。",
+            "meta": {},
+        }), 400
+
+    t0 = _time.time()
+    print(f"[fetch-url] START url={url[:80]}", flush=True)
     try:
         result = fetch_sync(url)
+        elapsed = _time.time() - t0
         text = result.get("text", "")
         meta = result.get("meta", {})
+        print(f"[fetch-url] OK {len(text)} chars in {elapsed:.1f}s", flush=True)
 
         if text and len(text) > 50:
             return jsonify({
@@ -665,6 +701,8 @@ def fetch_url():
             "meta": {},
         })
     except Exception as e:
+        elapsed = _time.time() - t0
+        print(f"[fetch-url] ERROR in {elapsed:.1f}s: {e}", flush=True)
         return jsonify({
             "text": "",
             "source": "error",
@@ -799,6 +837,7 @@ HTMLタグだけを出力し、コードブロック記法で囲まないでく�
 
 
 @app.route("/api/rewrite/start", methods=["POST"])
+@require_auth
 def rewrite_start():
     data = request.json or {}
     style_guide = data.get("style_guide", {})
@@ -831,6 +870,7 @@ def rewrite_start():
 
 
 @app.route("/api/rewrite/continue", methods=["POST"])
+@require_auth
 def rewrite_continue():
     data = request.json or {}
     style_guide = data.get("style_guide", {})
@@ -866,6 +906,7 @@ def rewrite_continue():
 
 
 @app.route("/api/rewrite/generate", methods=["POST"])
+@require_auth
 def rewrite_generate():
     data = request.json or {}
     style_guide = data.get("style_guide", {})
@@ -900,6 +941,7 @@ def rewrite_generate():
 
 
 @app.route("/api/extract-source", methods=["POST"])
+@require_auth
 def extract_source():
     """URLまたはPDFからテキストを抽出する汎用エンドポイント"""
     url = (request.form.get("url") or "").strip()
@@ -1021,12 +1063,19 @@ def _extract_url(url):
 
 
 @app.route("/api/articles", methods=["GET"])
+@require_auth
 def list_articles():
-    articles = load_articles()
+    data = supabase.table("articles").select("*").eq("user_id", g.user_id).order("created_at", desc=True).execute()
+    # Map DB column name text_content -> text for frontend compatibility
+    articles = []
+    for row in data.data:
+        row["text"] = row.pop("text_content", "")
+        articles.append(row)
     return jsonify({"articles": articles})
 
 
 @app.route("/api/articles", methods=["POST"])
+@require_auth
 def create_article():
     data = request.json
     title = data.get("title", "").strip()
@@ -1039,74 +1088,87 @@ def create_article():
     if not title:
         return jsonify({"error": "タイトルを入力してください"}), 400
 
-    created_at = datetime.now().isoformat()
-    article = {
-        "id": str(uuid.uuid4()),
+    result = supabase.table("articles").insert({
+        "user_id": g.user_id,
         "title": title,
         "html": html,
-        "text": text,
+        "text_content": text,
         "memo": memo,
         "conversation": conversation,
         "context_id": context_id,
-        "created_at": created_at,
-        "versions": [{"html": html, "text": text, "created_at": created_at}],
-    }
+    }).execute()
 
-    articles = load_articles()
-    articles.insert(0, article)
-    save_articles(articles)
-
-    return jsonify({"article": article})
+    art = result.data[0]
+    art["text"] = art.pop("text_content", "")
+    return jsonify({"article": art})
 
 
 @app.route("/api/articles/<article_id>", methods=["PUT"])
+@require_auth
 def update_article(article_id):
     data = request.json
-    articles = load_articles()
-    idx = next((i for i, a in enumerate(articles) if a["id"] == article_id), None)
-    if idx is None:
+
+    update_data = {}
+
+    if "html" in data:
+        update_data["html"] = data["html"]
+
+    if "text" in data:
+        update_data["text_content"] = data["text"]
+
+    if "title" in data:
+        update_data["title"] = data["title"]
+
+    if "memo" in data:
+        update_data["memo"] = data["memo"]
+
+    if "conversation" in data:
+        update_data["conversation"] = data["conversation"]
+
+    if "context_id" in data:
+        update_data["context_id"] = data["context_id"]
+
+    if "status" in data:
+        if data["status"] not in ["draft", "interviewing", "completed"]:
+            return jsonify({"error": "無効なステータスです"}), 400
+        update_data["status"] = data["status"]
+
+    if not update_data:
+        return jsonify({"error": "更新するデータがありません"}), 400
+
+    result = supabase.table("articles").update(update_data).eq("id", article_id).eq("user_id", g.user_id).execute()
+
+    if not result.data:
         return jsonify({"error": "記事が見つかりません"}), 404
 
-    art = articles[idx]
-    if "versions" not in art:
-        art["versions"] = []
-    now = datetime.now().isoformat()
-    art["versions"].insert(0, {
-        "html": art.get("html", ""),
-        "text": art.get("text", ""),
-        "created_at": now,
-    })
-    art["versions"] = art["versions"][:20]
-
-    art["html"] = data.get("html", art.get("html", ""))
-    art["text"] = data.get("text", art.get("text", ""))
-    if data.get("title"):
-        art["title"] = data["title"]
-    art["updated_at"] = now
-    save_articles(articles)
+    art = result.data[0]
+    art["text"] = art.pop("text_content", "")
     return jsonify({"article": art})
 
 
 @app.route("/api/articles/<article_id>", methods=["DELETE"])
+@require_auth
 def delete_article(article_id):
-    articles = load_articles()
-    articles = [a for a in articles if a["id"] != article_id]
-    save_articles(articles)
+    supabase.table("articles").delete().eq("id", article_id).eq("user_id", g.user_id).execute()
     return jsonify({"success": True})
 
 
 @app.route("/api/sessions", methods=["GET"])
+@require_auth
 def list_sessions():
     sessions = load_sessions()
+    sessions = [s for s in sessions if s.get("user_id") == g.user_id]
     sessions = sorted(sessions, key=lambda s: s.get("updated_at", ""), reverse=True)
     return jsonify({"sessions": sessions})
 
 
 @app.route("/api/sessions", methods=["POST"])
+@require_auth
 def create_session():
     data = request.json or {}
     session = {
         "id": str(uuid.uuid4()),
+        "user_id": g.user_id,
         "mode": data.get("mode", "create"),
         "step": data.get("step", 1),
         "title": data.get("title", ""),
@@ -1129,20 +1191,22 @@ def create_session():
 
 
 @app.route("/api/sessions/<session_id>", methods=["GET"])
+@require_auth
 def get_session(session_id):
     sessions = load_sessions()
     for s in sessions:
-        if s["id"] == session_id:
+        if s["id"] == session_id and s.get("user_id") == g.user_id:
             return jsonify({"session": s})
     return jsonify({"error": "セッションが見つかりません"}), 404
 
 
 @app.route("/api/sessions/<session_id>", methods=["PUT"])
+@require_auth
 def update_session(session_id):
     data = request.json or {}
     sessions = load_sessions()
     for s in sessions:
-        if s["id"] == session_id:
+        if s["id"] == session_id and s.get("user_id") == g.user_id:
             if "step" in data:
                 s["step"] = data["step"]
             if "title" in data:
@@ -1172,20 +1236,24 @@ def update_session(session_id):
 
 
 @app.route("/api/sessions/<session_id>", methods=["DELETE"])
+@require_auth
 def delete_session(session_id):
     sessions = load_sessions()
-    sessions = [s for s in sessions if s["id"] != session_id]
+    sessions = [s for s in sessions if not (s["id"] == session_id and s.get("user_id") == g.user_id)]
     save_sessions(sessions)
     return jsonify({"success": True})
 
 
 @app.route("/api/prompt-templates", methods=["GET"])
+@require_auth
 def list_prompt_templates():
     templates = load_prompt_templates()
+    templates = [t for t in templates if t.get("user_id") == g.user_id]
     return jsonify({"templates": templates})
 
 
 @app.route("/api/prompt-templates", methods=["POST"])
+@require_auth
 def create_prompt_template():
     data = request.json or {}
     name = (data.get("name") or "").strip()
@@ -1195,6 +1263,7 @@ def create_prompt_template():
         return jsonify({"error": "テンプレート名を入力してください"}), 400
     template = {
         "id": str(uuid.uuid4()),
+        "user_id": g.user_id,
         "name": name,
         "title": title,
         "memo": memo,
@@ -1207,11 +1276,12 @@ def create_prompt_template():
 
 
 @app.route("/api/prompt-templates/<template_id>", methods=["PUT"])
+@require_auth
 def update_prompt_template(template_id):
     data = request.json or {}
     templates = load_prompt_templates()
     for t in templates:
-        if t["id"] == template_id:
+        if t["id"] == template_id and t.get("user_id") == g.user_id:
             if "name" in data:
                 t["name"] = (data["name"] or "").strip()
             if "title" in data:
@@ -1224,20 +1294,27 @@ def update_prompt_template(template_id):
 
 
 @app.route("/api/prompt-templates/<template_id>", methods=["DELETE"])
+@require_auth
 def delete_prompt_template(template_id):
     templates = load_prompt_templates()
-    templates = [t for t in templates if t["id"] != template_id]
+    original_len = len(templates)
+    templates = [t for t in templates if not (t["id"] == template_id and t.get("user_id") == g.user_id)]
+    if len(templates) == original_len:
+        return jsonify({"error": "テンプレートが見つかりません"}), 404
     save_prompt_templates(templates)
     return jsonify({"success": True})
 
 
 @app.route("/api/cta-templates", methods=["GET"])
+@require_auth
 def list_cta_templates():
     templates = load_cta_templates()
-    return jsonify({"templates": templates})
+    user_templates = [t for t in templates if t.get("user_id") == g.user_id]
+    return jsonify({"templates": user_templates})
 
 
 @app.route("/api/cta-templates", methods=["POST"])
+@require_auth
 def create_cta_template():
     data = request.json or {}
     name = (data.get("name") or "").strip()
@@ -1246,6 +1323,7 @@ def create_cta_template():
         return jsonify({"error": "CTA名を入力してください"}), 400
     template = {
         "id": str(uuid.uuid4()),
+        "user_id": g.user_id,
         "name": name,
         "content": content,
         "created_at": datetime.now().isoformat(),
@@ -1257,11 +1335,12 @@ def create_cta_template():
 
 
 @app.route("/api/cta-templates/<template_id>", methods=["PUT"])
+@require_auth
 def update_cta_template(template_id):
     data = request.json or {}
     templates = load_cta_templates()
     for t in templates:
-        if t["id"] == template_id:
+        if t["id"] == template_id and t.get("user_id") == g.user_id:
             if "name" in data:
                 t["name"] = (data["name"] or "").strip()
             if "content" in data:
@@ -1272,9 +1351,13 @@ def update_cta_template(template_id):
 
 
 @app.route("/api/cta-templates/<template_id>", methods=["DELETE"])
+@require_auth
 def delete_cta_template(template_id):
     templates = load_cta_templates()
-    templates = [t for t in templates if t["id"] != template_id]
+    original_len = len(templates)
+    templates = [t for t in templates if not (t["id"] == template_id and t.get("user_id") == g.user_id)]
+    if len(templates) == original_len:
+        return jsonify({"error": "CTAテンプレートが見つかりません"}), 404
     save_cta_templates(templates)
     return jsonify({"success": True})
 
@@ -1310,6 +1393,7 @@ def update_author_profile():
 
 
 @app.route("/api/article/edit-selection", methods=["POST"])
+@require_auth
 def edit_selection():
     data = request.json
     full_html = data.get("full_html", "")
@@ -1347,6 +1431,7 @@ def edit_selection():
 
 
 @app.route("/api/article/edit-full", methods=["POST"])
+@require_auth
 def edit_full():
     data = request.json
     full_html = data.get("full_html", "")

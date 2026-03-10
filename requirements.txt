@@ -5,4 +5,6 @@ flask-cors
 beautifulsoup4
 requests
 PyMuPDF
+supabase
+PyJWT[crypto]
 youtube-transcript-api
