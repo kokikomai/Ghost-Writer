@@ -34,6 +34,8 @@ ARTICLES_FILE = os.path.join(DATA_DIR, "articles.json")
 SESSIONS_FILE = os.path.join(DATA_DIR, "sessions.json")
 PROMPT_TEMPLATES_FILE = os.path.join(DATA_DIR, "prompt_templates.json")
 CTA_TEMPLATES_FILE = os.path.join(DATA_DIR, "cta_templates.json")
+SYSTEM_PROMPT_FILE = os.path.join(DATA_DIR, "system_prompt.json")
+AUTHOR_PROFILE_FILE = os.path.join(DATA_DIR, "author_profile.json")
 
 
 def load_json(path):
@@ -86,6 +88,79 @@ def load_cta_templates():
 
 def save_cta_templates(templates):
     save_json(CTA_TEMPLATES_FILE, templates)
+
+
+def load_system_prompt():
+    data = load_json(SYSTEM_PROMPT_FILE)
+    if isinstance(data, dict):
+        return data
+    return {"prompt": ""}
+
+
+def save_system_prompt(data):
+    save_json(SYSTEM_PROMPT_FILE, data)
+
+
+def load_author_profile():
+    data = load_json(AUTHOR_PROFILE_FILE)
+    if isinstance(data, dict):
+        return data
+    return {
+        "name": "",
+        "title": "",
+        "industry": "",
+        "company_size": "",
+        "x_account": "",
+        "background": "",
+        "values": "",
+        "failures": "",
+        "themes": "",
+        "expressions": "",
+        "target_readers": "",
+        "notes": "",
+    }
+
+
+def save_author_profile(data):
+    save_json(AUTHOR_PROFILE_FILE, data)
+
+
+def build_global_context():
+    """システムプロンプトと筆者プロフィールを結合して返す。空なら空文字。"""
+    parts = []
+
+    sp = load_system_prompt()
+    prompt_text = (sp.get("prompt") or "").strip()
+    if prompt_text:
+        parts.append(f"## システムプロンプト（常時適用）\n{prompt_text}")
+
+    ap = load_author_profile()
+    profile_lines = []
+    field_labels = {
+        "name": "名前",
+        "title": "肩書き・役職",
+        "industry": "業界",
+        "company_size": "会社規模",
+        "x_account": "Xアカウント",
+        "background": "経歴・ストーリー",
+        "values": "価値観・信念",
+        "failures": "過去の失敗・挫折",
+        "themes": "得意テーマ",
+        "expressions": "口癖・よく使う表現",
+        "target_readers": "ターゲット読者",
+        "notes": "補足メモ",
+    }
+    for key, label in field_labels.items():
+        val = (ap.get(key) or "").strip()
+        if val:
+            profile_lines.append(f"- {label}: {val}")
+
+    if profile_lines:
+        parts.append("## 筆者プロフィール（常時参照）\n" + "\n".join(profile_lines))
+
+    if not parts:
+        return ""
+    return "\n\n".join(parts) + "\n\n"
 
 
 def call_claude(system_prompt, user_prompt, *, json_mode=False, model=None):
@@ -184,7 +259,8 @@ def _format_sources(sources):
 
 
 def build_interview_prompt(style_guide, title, memo, sources=None):
-    system = """あなたは敏腕インタビュアーです。経営者から記事の素材を引き出し、最高の記事に仕上げるための深掘り質問をします。日本語で応答してください。"""
+    gc = build_global_context()
+    system = f"""{gc}あなたは敏腕インタビュアーです。経営者から記事の素材を引き出し、最高の記事に仕上げるための深掘り質問をします。日本語で応答してください。"""
 
     sources_text = _format_sources(sources)
 
@@ -227,7 +303,8 @@ def build_followup_prompt(style_guide, title, memo, conversation_history, source
 
     sources_text = _format_sources(sources)
 
-    system = """あなたは敏腕インタビュアーです。記事の素材を引き出すためのインタビューを続けています。日本語で応答してください。"""
+    gc = build_global_context()
+    system = f"""{gc}あなたは敏腕インタビュアーです。記事の素材を引き出すためのインタビューを続けています。日本語で応答してください。"""
 
     user = f"""## スタイルガイド
 {json.dumps(style_guide, ensure_ascii=False, indent=2)}
@@ -263,7 +340,8 @@ def build_article_prompt(style_guide, title, memo, conversation_history, sources
 
     sources_text = _format_sources(sources)
 
-    system = """あなたは長文エッセイライターです。インタビューで得た素材をすべて統合し、スタイルガイドに厳密に従って記事を作成してください。日本語で執筆してください。"""
+    gc = build_global_context()
+    system = f"""{gc}あなたは長文エッセイライターです。インタビューで得た素材をすべて統合し、スタイルガイドに厳密に従って記事を作成してください。日本語で執筆してください。"""
 
     user = f"""## スタイルガイド
 {json.dumps(style_guide, ensure_ascii=False, indent=2)}
@@ -573,7 +651,8 @@ def fetch_url():
 def build_rewrite_interview_prompt(style_guide, original_article, user_angle):
     sources_text = _format_sources([{"title": "元記事", "text": original_article}]) if original_article else ""
 
-    system = """あなたは敏腕インタビュアーです。ユーザーが既存の記事を自分の言葉でリライトしようとしています。
+    gc = build_global_context()
+    system = f"""{gc}あなたは敏腕インタビュアーです。ユーザーが既存の記事を自分の言葉でリライトしようとしています。
 元記事の情報や有益さはそのままに、ユーザー自身の一次情報・エピソードを盛り込むために深掘り質問をします。日本語で応答してください。"""
 
     user = f"""## スタイルガイド（この記事が目指すスタイル）
@@ -610,7 +689,8 @@ def build_rewrite_followup_prompt(style_guide, original_article, user_angle, con
         role = "インタビュアー" if msg["role"] == "assistant" else "ユーザー"
         history_text += f"\n{role}: {msg['content']}\n"
 
-    system = """あなたは敏腕インタビュアーです。リライト記事の素材を引き出すためのインタビューを続けています。日本語で応答してください。"""
+    gc = build_global_context()
+    system = f"""{gc}あなたは敏腕インタビュアーです。リライト記事の素材を引き出すためのインタビューを続けています。日本語で応答してください。"""
 
     user = f"""## スタイルガイド
 {json.dumps(style_guide, ensure_ascii=False, indent=2)}
@@ -647,7 +727,8 @@ def build_rewrite_article_prompt(style_guide, original_article, user_angle, conv
 
     sources_text = _format_sources(sources)
 
-    system = """あなたは長文エッセイライターです。元記事の情報や有益さをベースにしつつ、インタビューで得たユーザー独自の一次情報・エピソードを織り交ぜてリライト記事を作成してください。
+    gc = build_global_context()
+    system = f"""{gc}あなたは長文エッセイライターです。元記事の情報や有益さをベースにしつつ、インタビューで得たユーザー独自の一次情報・エピソードを織り交ぜてリライト記事を作成してください。
 元記事のコピペではなく、ユーザーの言葉と経験で再構築してください。日本語で執筆してください。"""
 
     user = f"""## スタイルガイド
@@ -1173,6 +1254,36 @@ def delete_cta_template(template_id):
     return jsonify({"success": True})
 
 
+@app.route("/api/system-prompt", methods=["GET"])
+def get_system_prompt():
+    return jsonify(load_system_prompt())
+
+
+@app.route("/api/system-prompt", methods=["PUT"])
+def update_system_prompt():
+    data = request.json or {}
+    sp = load_system_prompt()
+    sp["prompt"] = data.get("prompt", "")
+    save_system_prompt(sp)
+    return jsonify(sp)
+
+
+@app.route("/api/author-profile", methods=["GET"])
+def get_author_profile():
+    return jsonify(load_author_profile())
+
+
+@app.route("/api/author-profile", methods=["PUT"])
+def update_author_profile():
+    data = request.json or {}
+    ap = load_author_profile()
+    for key in ap:
+        if key in data:
+            ap[key] = data[key]
+    save_author_profile(ap)
+    return jsonify(ap)
+
+
 @app.route("/api/article/edit-selection", methods=["POST"])
 def edit_selection():
     data = request.json
@@ -1182,7 +1293,8 @@ def edit_selection():
     style_guide = data.get("style_guide", {})
     model = data.get("model")
 
-    system = "あなたは長文エッセイの編集者です。記事の一部を修正してください。日本語で応答してください。"
+    gc = build_global_context()
+    system = f"{gc}あなたは長文エッセイの編集者です。記事の一部を修正してください。日本語で応答してください。"
     user = f"""## 記事全体（HTML）
 {full_html}
 
@@ -1217,7 +1329,8 @@ def edit_full():
     style_guide = data.get("style_guide", {})
     model = data.get("model")
 
-    system = "あなたは長文エッセイの編集者です。記事全体に対して修正指示に従って書き換えてください。日本語で応答してください。"
+    gc = build_global_context()
+    system = f"{gc}あなたは長文エッセイの編集者です。記事全体に対して修正指示に従って書き換えてください。日本語で応答してください。"
     user = f"""## 記事全体（HTML）
 {full_html}
 

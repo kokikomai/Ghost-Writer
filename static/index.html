@@ -1627,6 +1627,116 @@
     0%, 100% { opacity: 0.6; }
     50% { opacity: 1; }
   }
+
+  /* Settings Modal */
+  .settings-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: fadeIn 0.15s ease;
+  }
+  .settings-overlay.show { display: flex; }
+
+  .settings-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 640px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideIn 0.2s ease;
+  }
+  .settings-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .settings-tab {
+    flex: 1;
+    padding: 14px 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s;
+  }
+  .settings-tab:hover { color: var(--text); background: var(--surface-hover); }
+  .settings-tab.active {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .settings-tab.active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 3px;
+    background: var(--x-blue);
+    border-radius: 3px;
+  }
+  .settings-body {
+    overflow-y: auto;
+    padding: 24px;
+    flex: 1;
+  }
+  .settings-section { display: none; }
+  .settings-section.active { display: block; }
+  .settings-field {
+    margin-bottom: 20px;
+  }
+  .settings-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .settings-field textarea,
+  .settings-field input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+    transition: border-color 0.15s;
+  }
+  .settings-field textarea:focus,
+  .settings-field input[type="text"]:focus {
+    outline: none;
+    border-color: var(--x-blue);
+  }
+  .settings-field textarea { min-height: 100px; }
+  .settings-field .field-hint {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+  .settings-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -1641,6 +1751,7 @@
       </div>
     </div>
     <div class="app-header-right">
+      <button type="button" class="btn-icon" onclick="openSettingsModal()" title="設定" aria-label="設定">⚙</button>
       <button type="button" class="btn-icon" id="theme-toggle" onclick="toggleDarkMode()" title="ダークモード" aria-label="テーマ切替">☀</button>
       <button type="button" class="btn-icon" onclick="showShortcutModal()" title="ショートカット (?)" aria-label="ショートカット一覧">?</button>
       <div class="model-selector">
@@ -2055,6 +2166,88 @@
       </div>
     </div>
     <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="settings-overlay" id="settings-overlay" onclick="closeSettingsModal(event)">
+  <div class="settings-modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">設定</div>
+      <button class="modal-close" onclick="closeSettingsModal()">&times;</button>
+    </div>
+    <div class="settings-tabs">
+      <button class="settings-tab active" data-tab="system-prompt" onclick="switchSettingsTab('system-prompt')">システムプロンプト</button>
+      <button class="settings-tab" data-tab="author-profile" onclick="switchSettingsTab('author-profile')">筆者プロフィール</button>
+    </div>
+
+    <div class="settings-body">
+      <!-- System Prompt Tab -->
+      <div class="settings-section active" id="settings-system-prompt">
+        <div class="settings-field">
+          <label>常時適用プロンプト</label>
+          <textarea id="sp-prompt" rows="10" placeholder="ここに入力した内容が、すべてのAI呼び出し（インタビュー・記事生成・編集）に自動で適用されます。&#10;&#10;例:&#10;- 読者は20〜30代の経営者を想定してください&#10;- 「〜だ。」で終わる短文を多用してください&#10;- 必ず冒頭に具体的な場面描写を入れてください"></textarea>
+          <div class="field-hint">インタビュー・記事生成・編集など、すべてのAI処理に自動で注入されます。</div>
+        </div>
+      </div>
+
+      <!-- Author Profile Tab -->
+      <div class="settings-section" id="settings-author-profile">
+        <div class="settings-field">
+          <label>名前</label>
+          <input type="text" id="ap-name" placeholder="例: 山田太郎">
+        </div>
+        <div class="settings-field">
+          <label>肩書き・役職</label>
+          <input type="text" id="ap-title" placeholder="例: 株式会社○○ CEO">
+        </div>
+        <div class="settings-field">
+          <label>業界</label>
+          <input type="text" id="ap-industry" placeholder="例: IT / 飲食 / 人材">
+        </div>
+        <div class="settings-field">
+          <label>会社規模</label>
+          <input type="text" id="ap-company_size" placeholder="例: 社員30名のスタートアップ">
+        </div>
+        <div class="settings-field">
+          <label>X アカウント</label>
+          <input type="text" id="ap-x_account" placeholder="例: @username">
+        </div>
+        <div class="settings-field">
+          <label>経歴・ストーリー</label>
+          <textarea id="ap-background" rows="4" placeholder="キャリアの転機、これまでの歩みなど"></textarea>
+        </div>
+        <div class="settings-field">
+          <label>価値観・信念</label>
+          <textarea id="ap-values" rows="3" placeholder="仕事や人生で大切にしていること"></textarea>
+        </div>
+        <div class="settings-field">
+          <label>過去の失敗・挫折</label>
+          <textarea id="ap-failures" rows="3" placeholder="弱さを見せることが共感を生む。隠さず書くほどポストの質が上がる"></textarea>
+        </div>
+        <div class="settings-field">
+          <label>得意テーマ</label>
+          <textarea id="ap-themes" rows="2" placeholder="例: マネジメント、採用、組織文化、起業"></textarea>
+        </div>
+        <div class="settings-field">
+          <label>口癖・よく使う表現</label>
+          <textarea id="ap-expressions" rows="2" placeholder="自分らしい言い回しがあれば"></textarea>
+        </div>
+        <div class="settings-field">
+          <label>ターゲット読者</label>
+          <textarea id="ap-target_readers" rows="2" placeholder="例: 20〜30代の経営者・マネージャー層"></textarea>
+        </div>
+        <div class="settings-field">
+          <label>補足メモ</label>
+          <textarea id="ap-notes" rows="3" placeholder="その他、ポスト作成に役立つ情報"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-footer">
+      <button class="btn btn-secondary" onclick="closeSettingsModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveSettings()">保存</button>
+    </div>
   </div>
 </div>
 
@@ -4232,6 +4425,74 @@ function toggleDarkMode() {
 }
 initTheme();
 
+// ── Settings (System Prompt & Author Profile) ──
+let settingsSystemPrompt = {};
+let settingsAuthorProfile = {};
+
+async function loadSettings() {
+  try {
+    const [spRes, apRes] = await Promise.all([
+      fetch("/api/system-prompt"),
+      fetch("/api/author-profile"),
+    ]);
+    settingsSystemPrompt = await spRes.json();
+    settingsAuthorProfile = await apRes.json();
+  } catch (e) {
+    console.error("設定の読み込みに失敗:", e);
+  }
+}
+
+function openSettingsModal() {
+  document.getElementById("sp-prompt").value = settingsSystemPrompt.prompt || "";
+  const apFields = ["name", "title", "industry", "company_size", "x_account",
+    "background", "values", "failures", "themes", "expressions", "target_readers", "notes"];
+  apFields.forEach(f => {
+    const el = document.getElementById("ap-" + f);
+    if (el) el.value = settingsAuthorProfile[f] || "";
+  });
+  switchSettingsTab("system-prompt");
+  document.getElementById("settings-overlay").classList.add("show");
+}
+
+function closeSettingsModal(e) {
+  if (e && e.target && e.target !== document.getElementById("settings-overlay")) return;
+  document.getElementById("settings-overlay").classList.remove("show");
+}
+
+function switchSettingsTab(tab) {
+  document.querySelectorAll(".settings-tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.tab === tab);
+  });
+  document.querySelectorAll(".settings-section").forEach(s => {
+    s.classList.toggle("active", s.id === "settings-" + tab);
+  });
+}
+
+async function saveSettings() {
+  try {
+    const spData = { prompt: document.getElementById("sp-prompt").value };
+    const apFields = ["name", "title", "industry", "company_size", "x_account",
+      "background", "values", "failures", "themes", "expressions", "target_readers", "notes"];
+    const apData = {};
+    apFields.forEach(f => {
+      const el = document.getElementById("ap-" + f);
+      if (el) apData[f] = el.value;
+    });
+
+    const [spRes, apRes] = await Promise.all([
+      fetch("/api/system-prompt", { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(spData) }),
+      fetch("/api/author-profile", { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(apData) }),
+    ]);
+    settingsSystemPrompt = await spRes.json();
+    settingsAuthorProfile = await apRes.json();
+
+    document.getElementById("settings-overlay").classList.remove("show");
+    showToast("設定を保存しました", "success");
+  } catch (e) {
+    showToast("設定の保存に失敗しました: " + e.message, "error");
+  }
+}
+
 // ── Init ──
 loadModels();
 loadContexts();
@@ -4239,6 +4500,7 @@ loadArticles();
 loadSessions();
 loadPromptTemplates();
 loadCtaTemplates();
+loadSettings();
 renderSources();
 </script>
 </body>
