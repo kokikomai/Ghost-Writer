@@ -118,6 +118,7 @@ def load_author_profile():
         "expressions": "",
         "target_readers": "",
         "notes": "",
+        "reference_article_ids": [],
     }
 
 
@@ -157,6 +158,30 @@ def build_global_context():
 
     if profile_lines:
         parts.append("## 筆者プロフィール（常時参照）\n" + "\n".join(profile_lines))
+
+    ref_ids = ap.get("reference_article_ids") or []
+    if ref_ids:
+        articles = load_articles()
+        art_map = {a["id"]: a for a in articles}
+        ref_texts = []
+        for aid in ref_ids:
+            art = art_map.get(aid)
+            if not art:
+                continue
+            text = art.get("text") or ""
+            if not text.strip():
+                from bs4 import BeautifulSoup as _BS
+                html = art.get("html") or ""
+                text = _BS(html, "html.parser").get_text("\n", strip=True) if html else ""
+            if text.strip():
+                ref_texts.append(
+                    f"### {art.get('title', '無題')}\n{text[:3000]}"
+                )
+        if ref_texts:
+            parts.append(
+                "## 筆者の過去の記事（文体・思考パターンの参考として活用）\n"
+                + "\n\n".join(ref_texts)
+            )
 
     if not parts:
         return ""
