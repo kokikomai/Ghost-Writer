@@ -5022,7 +5022,7 @@ document.addEventListener("mousedown", (e) => {
 });
 
 function handleEditPopoverKey(e, mode) {
-  if (e.key === "Enter") submitEditSelection(mode);
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitEditSelection(mode); }
   if (e.key === "Escape") {
     const idMap = { create: "edit-popover", rewrite: "rw-edit-popover", modal: "modal-edit-popover" };
     document.getElementById(idMap[mode] || "edit-popover").classList.remove("show");
@@ -5030,7 +5030,7 @@ function handleEditPopoverKey(e, mode) {
 }
 
 function handleEditFullKey(e, mode) {
-  if (e.key === "Enter") submitEditFull(mode);
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitEditFull(mode); }
 }
 
 async function submitEditSelection(mode) {
