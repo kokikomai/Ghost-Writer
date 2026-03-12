@@ -960,6 +960,19 @@
     font-weight: 700;
   }
 
+  .article-output[contenteditable="true"] {
+    outline: none;
+    cursor: text;
+  }
+  .article-output[contenteditable="true"]:focus {
+    border-color: var(--x-blue);
+    box-shadow: 0 0 0 1px var(--x-blue);
+  }
+  .article-output[contenteditable="true"]:empty::before {
+    content: "記事がここに表示されます";
+    color: var(--text-dim);
+  }
+
   /* Style preview */
   .style-preview {
     background: var(--surface);
@@ -2432,7 +2445,7 @@
     </div>
 
     <div style="position:relative;">
-      <div class="article-output" id="article-output"></div>
+      <div class="article-output" id="article-output" contenteditable="true"></div>
       <div class="article-char-count" id="article-char-count"></div>
       <div class="edit-popover" id="edit-popover">
         <div class="edit-popover-selected" id="edit-popover-selected"></div>
@@ -2561,7 +2574,7 @@
     </div>
 
     <div style="position:relative;">
-      <div class="article-output" id="rw-article-output"></div>
+      <div class="article-output" id="rw-article-output" contenteditable="true"></div>
       <div class="article-char-count" id="rw-article-char-count"></div>
       <div class="edit-popover" id="rw-edit-popover">
         <div class="edit-popover-selected" id="rw-edit-popover-selected"></div>
@@ -5127,12 +5140,22 @@ document.addEventListener("DOMContentLoaded", () => {
   if (createOutput && createPopover) {
     setupSelectionListener(createOutput, createPopover, createLabel, "create");
   }
+  if (createOutput) {
+    createOutput.addEventListener("input", () => {
+      updateArticleCharCount("article-output", "article-char-count");
+    });
+  }
 
   const rwOutput = document.getElementById("rw-article-output");
   const rwPopover = document.getElementById("rw-edit-popover");
   const rwLabel = document.getElementById("rw-edit-popover-selected");
   if (rwOutput && rwPopover) {
     setupSelectionListener(rwOutput, rwPopover, rwLabel, "rewrite");
+  }
+  if (rwOutput) {
+    rwOutput.addEventListener("input", () => {
+      updateArticleCharCount("rw-article-output", "rw-article-char-count");
+    });
   }
 });
 
